@@ -17,6 +17,8 @@
 
 use std::sync::Arc;
 
+use bytes::Buf;
+
 use crate::key::{KeySlice, KeyVec};
 
 use super::Block;
@@ -35,57 +37,105 @@ pub struct BlockIterator {
     first_key: KeyVec,
 }
 
+impl Block {
+    fn get_block_first_key(&self) -> KeyVec {
+        let mut data = &self.data[..];
+        let first_key_length = data.get_u16();
+        let u16_size = std::mem::size_of::<u16>();
+        let first_key_bytes = &self.data[u16_size..(u16_size + (first_key_length as usize))];
+        KeyVec::from_vec(first_key_bytes.to_vec())
+    }
+}
+
 impl BlockIterator {
     fn new(block: Arc<Block>) -> Self {
         Self {
-            block,
             key: KeyVec::new(),
             value_range: (0, 0),
             idx: 0,
-            first_key: KeyVec::new(),
+            first_key: block.get_block_first_key(),
+            block,
         }
     }
 
     /// Creates a block iterator and seek to the first entry.
     pub fn create_and_seek_to_first(block: Arc<Block>) -> Self {
-        unimplemented!()
+        let mut res = BlockIterator::new(block);
+        res.seek_to_first();
+        res
     }
 
     /// Creates a block iterator and seek to the first key that >= `key`.
     pub fn create_and_seek_to_key(block: Arc<Block>, key: KeySlice) -> Self {
-        unimplemented!()
+        let mut res = BlockIterator::new(block);
+        res.seek_to_key(key);
+        res
     }
 
     /// Returns the key of the current entry.
     pub fn key(&self) -> KeySlice {
-        unimplemented!()
+        KeySlice::from_slice(self.key.raw_ref())
     }
 
     /// Returns the value of the current entry.
     pub fn value(&self) -> &[u8] {
-        unimplemented!()
+        &self.block.data[self.value_range.0..self.value_range.1]
     }
 
     /// Returns true if the iterator is valid.
     /// Note: You may want to make use of `key`
     pub fn is_valid(&self) -> bool {
-        unimplemented!()
+        if self.key.is_empty() {
+            return false;
+        }
+        true
+    }
+
+    pub fn seek_to_target_idx(&mut self, index: usize) {
+        let start_offset = self.block.offsets[index] as usize;
+        let mut target_data = &self.block.data[start_offset..];
+        let target_key_len = target_data.get_u16() as usize;
+        let u16_size = std::mem::size_of::<u16>();
+        let key_start = start_offset + u16_size;
+        let key_end = key_start + target_key_len;
+        let key_bytes = &self.block.data[key_start..key_end];
+        self.idx = index;
+        self.key = KeyVec::from_vec(key_bytes.to_vec());
+        let mut val_start = key_end;
+        let mut target_val_data = &self.block.data[val_start..];
+        val_start += u16_size;
+        let target_val_len = target_val_data.get_u16() as usize;
+        let val_end = val_start + target_val_len;
+        self.value_range = (val_start, val_end);
     }
 
     /// Seeks to the first key in the block.
     pub fn seek_to_first(&mut self) {
-        unimplemented!()
+        self.seek_to_target_idx(0);
     }
 
     /// Move to the next key in the block.
     pub fn next(&mut self) {
-        unimplemented!()
+        if self.idx == self.block.offsets.len() - 1 {
+            self.key = KeyVec::new();
+            self.value_range = (0, 0);
+            return;
+        }
+        self.seek_to_target_idx(self.idx + 1);
     }
 
     /// Seek to the first key that >= `key`.
     /// Note: You should assume the key-value pairs in the block are sorted when being added by
     /// callers.
     pub fn seek_to_key(&mut self, key: KeySlice) {
-        unimplemented!()
+        let offsets_len = self.block.offsets.len();
+        let mut i = 0_usize;
+        while i < offsets_len {
+            self.seek_to_target_idx(i);
+            if self.key >= key.to_key_vec() {
+                break;
+            }
+            i += 1;
+        }
     }
 }

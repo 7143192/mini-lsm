@@ -39,14 +39,14 @@ impl BlockBuilder {
         Self {
             offsets: Vec::new(),
             data: Vec::new(),
-            block_size: block_size,
+            block_size,
             first_key: KeyVec::new(),
         }
     }
 
     pub fn cur_size(&self) -> usize {
         let offset_bytes: usize = 2;
-        self.offsets.len() as usize * offset_bytes + self.data.len() as usize
+        self.offsets.len() * offset_bytes + self.data.len()
     }
 
     /// Adds a key-value pair to the block. Returns false when the block is full.
