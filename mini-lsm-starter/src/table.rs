@@ -25,7 +25,8 @@ use std::sync::Arc;
 
 use anyhow::Result;
 pub use builder::SsTableBuilder;
-use bytes::Buf;
+use bytes::Bytes;
+use bytes::{Buf, BufMut};
 pub use iterator::SsTableIterator;
 
 use crate::block::Block;
@@ -53,12 +54,40 @@ impl BlockMeta {
         #[allow(clippy::ptr_arg)] // remove this allow after you finish
         buf: &mut Vec<u8>,
     ) {
-        unimplemented!()
+        let meta_num = block_meta.len();
+        buf.put_u16(meta_num as u16);
+        for meta in block_meta {
+            buf.put_u32(meta.offset as u32);
+            buf.put_u16(meta.first_key.len() as u16);
+            buf.put_slice(meta.first_key.raw_ref());
+            buf.put_u16(meta.last_key.len() as u16);
+            buf.put_slice(meta.last_key.raw_ref());
+        }
     }
 
     /// Decode block meta from a buffer.
     pub fn decode_block_meta(buf: impl Buf) -> Vec<BlockMeta> {
-        unimplemented!()
+        let mut metas = Vec::new();
+        let mut data = buf.chunk();
+        let meta_num = data.get_u16();
+        let u16_size = std::mem::size_of::<u16>();
+        for _ in 0..meta_num {
+            let offset = data.get_u32() as usize;
+            let first_key_len = data.get_u16();
+            let key_start_off = offset + u16_size;
+            let key_end_off = key_start_off + first_key_len as usize;
+            let last_key_len = data.get_u16();
+            let last_key_start_off = key_end_off + u16_size;
+            let last_key_end_off = last_key_start_off + last_key_len as usize;
+            let first_key = &data[key_start_off..key_end_off];
+            let last_key = &data[last_key_start_off..last_key_end_off];
+            metas.push(BlockMeta {
+                offset,
+                first_key: KeyBytes::from_bytes(Bytes::from(first_key.to_vec())),
+                last_key: KeyBytes::from_bytes(Bytes::from(last_key.to_vec())),
+            });
+        }
+        metas
     }
 }
 
