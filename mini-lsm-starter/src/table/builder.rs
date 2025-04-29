@@ -113,11 +113,11 @@ impl SsTableBuilder {
         Ok(SsTable {
             id,
             file,
-            block_meta: self.meta,
-            block_meta_offset: 0,
+            block_meta_offset: meta_offset,
             block_cache,
-            first_key: KeyBytes::from_bytes(Bytes::from(self.first_key.clone())),
-            last_key: KeyBytes::from_bytes(Bytes::from(self.last_key.clone())),
+            first_key: self.meta.first().unwrap().first_key.clone(),
+            last_key: self.meta.last().unwrap().last_key.clone(),
+            block_meta: self.meta,
             bloom: None,
             max_ts: 0,
         })
