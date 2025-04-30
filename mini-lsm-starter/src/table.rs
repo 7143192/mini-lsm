@@ -25,6 +25,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 pub use builder::SsTableBuilder;
+use bytes::Bytes;
 use bytes::{Buf, BufMut};
 pub use iterator::SsTableIterator;
 
@@ -199,7 +200,7 @@ impl SsTable {
         let target_len = (end_offset - start_offset) as u64;
         let block_data_bytes = self.file.read(start_offset as u64, target_len)?;
         let block_data = &block_data_bytes[..];
-        Ok(Arc::new(Block::decode(&block_data)))
+        Ok(Arc::new(Block::decode(block_data)))
     }
 
     /// Read a block from disk, with block cache. (Day 4)
@@ -212,16 +213,23 @@ impl SsTable {
     /// You may also assume the key-value pairs stored in each consecutive block are sorted.
     pub fn find_block_idx(&self, key: KeySlice) -> usize {
         let meta_num = self.block_meta.len();
-        let mut res: usize = 0;
-        for i in 0..meta_num {
+        let mut res: usize = meta_num - 1;
+        for i in 1..meta_num {
             let first_key = self.block_meta[i].first_key.clone();
-            let last_key = self.block_meta[i].last_key.clone();
-            if first_key.raw_ref() <= key.raw_ref() {
-                res = i;
+            if first_key.as_key_slice() > key {
+                println!(
+                    "first key:{:?}, target key:{:?}",
+                    Bytes::copy_from_slice(first_key.raw_ref()),
+                    Bytes::copy_from_slice(key.raw_ref())
+                );
+                res = i - 1;
                 break;
             }
         }
         res
+        // self.block_meta
+        //     .partition_point(|meta| meta.first_key.as_key_slice() <= key)
+        //     .saturating_sub(1)
     }
 
     /// Get number of data blocks.

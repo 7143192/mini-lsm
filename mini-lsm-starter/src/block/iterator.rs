@@ -92,6 +92,11 @@ impl BlockIterator {
     }
 
     pub fn seek_to_target_idx(&mut self, index: usize) {
+        if index >= self.block.offsets.len() {
+            self.key = KeyVec::new();
+            self.value_range = (0, 0);
+            return;
+        }
         let start_offset = self.block.offsets[index] as usize;
         let mut target_data = &self.block.data[start_offset..];
         let target_key_len = target_data.get_u16() as usize;
@@ -121,7 +126,8 @@ impl BlockIterator {
             self.value_range = (0, 0);
             return;
         }
-        self.seek_to_target_idx(self.idx + 1);
+        self.idx += 1;
+        self.seek_to_target_idx(self.idx);
     }
 
     /// Seek to the first key that >= `key`.
@@ -130,9 +136,9 @@ impl BlockIterator {
     pub fn seek_to_key(&mut self, key: KeySlice) {
         let offsets_len = self.block.offsets.len();
         let mut i = 0_usize;
-        while i < offsets_len {
+        while i <= offsets_len {
             self.seek_to_target_idx(i);
-            if self.key >= key.to_key_vec() {
+            if self.key.as_key_slice() >= key {
                 break;
             }
             i += 1;

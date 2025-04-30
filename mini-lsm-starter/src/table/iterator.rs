@@ -18,6 +18,7 @@
 use std::sync::Arc;
 
 use anyhow::Result;
+use bytes::Bytes;
 
 use super::SsTable;
 use crate::{block::BlockIterator, iterators::StorageIterator, key::KeySlice};
@@ -53,12 +54,17 @@ impl SsTableIterator {
         let block = table.read_block(block_idx).unwrap();
         let mut blk_iter = BlockIterator::create_and_seek_to_key(block, key);
         if !blk_iter.is_valid() {
+            println!(
+                "block {} is invalid after seeking for key {:?}",
+                block_idx,
+                Bytes::copy_from_slice(key.raw_ref())
+            );
             block_idx += 1;
             if block_idx == table.block_meta.len() {
                 return (block_idx, blk_iter);
             }
             let new_block = table.read_block(block_idx).unwrap();
-            blk_iter = BlockIterator::create_and_seek_to_key(new_block, key);
+            blk_iter = BlockIterator::create_and_seek_to_first(new_block);
         }
         (block_idx, blk_iter)
     }

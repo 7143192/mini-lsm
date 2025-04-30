@@ -45,12 +45,6 @@ impl Block {
         let mut res_offsets: Vec<u16> = Vec::new();
         let u16_size = std::mem::size_of::<u16>();
         let offsets_num = (&data[data.len() - u16_size..]).get_u16();
-        println!(
-            "dat len:{}, sub len:{}, offset num:{}",
-            data.len(),
-            (u16_size * ((offsets_num + 1) as usize)),
-            offsets_num
-        );
         let res_data = data[0..data.len() - u16_size * ((offsets_num + 1) as usize)].to_vec();
         let mut i: u16 = 0;
         while i < offsets_num {
