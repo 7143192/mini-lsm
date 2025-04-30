@@ -24,7 +24,9 @@ use super::StorageIterator;
 pub struct TwoMergeIterator<A: StorageIterator, B: StorageIterator> {
     a: A,
     b: B,
-    // Add fields as need
+    // use_which == 0 => using a
+    // use_which == 1 => using b
+    use_which: u8,
 }
 
 impl<
@@ -32,8 +34,26 @@ impl<
     B: 'static + for<'a> StorageIterator<KeyType<'a> = A::KeyType<'a>>,
 > TwoMergeIterator<A, B>
 {
+    pub fn decide_use_which_iter(&self) -> u8 {
+        if !self.a.is_valid() {
+            return 1;
+        }
+        if !self.b.is_valid() {
+            return 0;
+        }
+        if self.a.key() < self.b.key() {
+            return 0;
+        }
+        1
+    }
+
     pub fn create(a: A, b: B) -> Result<Self> {
-        unimplemented!()
+        let mut iter = Self { a, b, use_which: 0 };
+        while iter.a.is_valid() && iter.b.is_valid() && iter.a.key() == iter.b.key() {
+            iter.b.next()?;
+        }
+        iter.use_which = iter.decide_use_which_iter();
+        Ok(iter)
     }
 }
 
@@ -45,18 +65,33 @@ impl<
     type KeyType<'a> = A::KeyType<'a>;
 
     fn key(&self) -> Self::KeyType<'_> {
-        unimplemented!()
+        if self.use_which == 0 {
+            return self.a.key();
+        }
+        self.b.key()
     }
 
     fn value(&self) -> &[u8] {
-        unimplemented!()
+        if self.use_which == 0 {
+            return self.a.value();
+        }
+        self.b.value()
     }
 
     fn is_valid(&self) -> bool {
-        unimplemented!()
+        self.use_which == 0 && self.a.is_valid() || self.use_which == 1 && self.b.is_valid()
     }
 
     fn next(&mut self) -> Result<()> {
-        unimplemented!()
+        if self.use_which == 0 {
+            self.a.next()?;
+        } else {
+            self.b.next()?;
+        }
+        while self.a.is_valid() && self.b.is_valid() && self.a.key() == self.b.key() {
+            self.b.next()?;
+        }
+        self.use_which = self.decide_use_which_iter();
+        Ok(())
     }
 }
