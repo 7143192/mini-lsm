@@ -376,7 +376,7 @@ impl LsmStorageInner {
         }
         // week 1 day 5: return None in memtables, try to seek in all level 0 sstables.
         for sst_id in snapshot.l0_sstables.iter() {
-            let sst = snapshot.sstables.get(sst_id).clone().unwrap();
+            let sst = snapshot.sstables.get(sst_id).unwrap();
             // week 1 day 7: adds bloom filter check logic.
             if let Some(bloom) = sst.bloom.as_ref() {
                 if !bloom.may_contain(farmhash::fingerprint32(_key)) {

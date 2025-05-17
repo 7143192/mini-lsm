@@ -61,7 +61,9 @@ impl SsTableBuilder {
             self.first_key = key.to_key_vec().raw_ref().to_vec();
         }
         // then try to add this kv pair into current block.
-        let add_result = self.builder.add(key, value);
+        // week 1 day 7
+        // let add_result = self.builder.add(key, value);
+        let add_result = self.builder.add_with_prefix(key, value);
         if add_result {
             // if success, set last key and return directly.
             self.last_key = key.to_key_vec().raw_ref().to_vec();
@@ -78,7 +80,9 @@ impl SsTableBuilder {
         let encoded_old_block = old_builder.build().encode();
         self.data.extend(encoded_old_block);
         // insert this kv pair into the new block.
-        let new_block_add_result = self.builder.add(key, value);
+        // week 1 day 7
+        // let new_block_add_result = self.builder.add(key, value);
+        let new_block_add_result = self.builder.add_with_prefix(key, value);
         if !new_block_add_result {
             panic!("Failed to add kv pair to new block.");
         }

@@ -50,19 +50,56 @@ impl BlockBuilder {
     }
 
     /// Adds a key-value pair to the block. Returns false when the block is full.
-    #[must_use]
+    // #[must_use]
     pub fn add(&mut self, key: KeySlice, value: &[u8]) -> bool {
-        let offset_bytes: usize = 2;
+        // let offset_bytes: usize = 2;
+        // if !self.is_empty()
+        //     && self.cur_size() + key.len() + value.len() + 3 * offset_bytes > self.block_size
+        // {
+        //     return false;
+        // }
+        // // add off into vec.
+        // self.offsets.push(self.data.len() as u16);
+        // // add data bytes into vec.
+        // self.data.put_u16(key.len() as u16);
+        // self.data.put(key.raw_ref());
+        // self.data.put_u16(value.len() as u16);
+        // self.data.put(value);
+        // if self.first_key.is_empty() {
+        //     self.first_key = key.to_key_vec();
+        // }
+        // true
+        self.add_with_prefix(key, value)
+    }
+
+    // week 1 day 7
+    pub fn add_with_prefix(&mut self, key: KeySlice, value: &[u8]) -> bool {
+        let u16_size = std::mem::size_of::<u16>();
+        // compute common len between target key and the first key first.
+        let mut common_len = 0;
+        if !self.first_key.is_empty() {
+            for i in 0..std::cmp::min(self.first_key.len(), key.len()) {
+                if self.first_key.raw_ref()[i] != key.raw_ref()[i] {
+                    break;
+                }
+                common_len += 1;
+            }
+        }
+        // compute rest len of he target key.
+        let rest_len = key.len() - common_len;
+        // check whether the block is full.
         if !self.is_empty()
-            && self.cur_size() + key.len() + value.len() + 3 * offset_bytes > self.block_size
+            && self.cur_size() + rest_len + value.len() + 4 * u16_size > self.block_size
         {
             return false;
         }
         // add off into vec.
         self.offsets.push(self.data.len() as u16);
+        // store an extra field to record common length with first key for a target key.
+        self.data.put_u16(common_len as u16);
         // add data bytes into vec.
-        self.data.put_u16(key.len() as u16);
-        self.data.put(key.raw_ref());
+        self.data.put_u16(rest_len as u16);
+        self.data.put(&key.raw_ref()[common_len..]);
         self.data.put_u16(value.len() as u16);
         self.data.put(value);
         if self.first_key.is_empty() {

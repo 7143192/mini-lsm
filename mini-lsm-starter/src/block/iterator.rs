@@ -40,9 +40,11 @@ pub struct BlockIterator {
 impl Block {
     fn get_block_first_key(&self) -> KeyVec {
         let mut data = &self.data[..];
+        let first_common_length = data.get_u16();
         let first_key_length = data.get_u16();
         let u16_size = std::mem::size_of::<u16>();
-        let first_key_bytes = &self.data[u16_size..(u16_size + (first_key_length as usize))];
+        let first_key_bytes =
+            &self.data[2 * u16_size..(2 * u16_size + (first_key_length as usize))];
         KeyVec::from_vec(first_key_bytes.to_vec())
     }
 }
@@ -99,13 +101,20 @@ impl BlockIterator {
         }
         let start_offset = self.block.offsets[index] as usize;
         let mut target_data = &self.block.data[start_offset..];
+        let common_key_len = target_data.get_u16() as usize;
         let target_key_len = target_data.get_u16() as usize;
         let u16_size = std::mem::size_of::<u16>();
-        let key_start = start_offset + u16_size;
+        let key_start = start_offset + u16_size * 2;
         let key_end = key_start + target_key_len;
         let key_bytes = &self.block.data[key_start..key_end];
         self.idx = index;
-        self.key = KeyVec::from_vec(key_bytes.to_vec());
+        if common_key_len == 0 {
+            self.key = KeyVec::from_vec(key_bytes.to_vec());
+        } else {
+            let mut common_key = self.first_key.raw_ref()[..common_key_len].to_vec();
+            common_key.extend_from_slice(key_bytes);
+            self.key = KeyVec::from_vec(common_key);
+        }
         let mut val_start = key_end;
         let mut target_val_data = &self.block.data[val_start..];
         val_start += u16_size;

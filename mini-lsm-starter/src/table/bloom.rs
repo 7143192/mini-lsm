@@ -88,14 +88,14 @@ impl Bloom {
         let k = (bits_per_key as f64 * 0.69) as u32;
         let k = k.clamp(1, 30);
         let nbits = (keys.len() * bits_per_key).max(64);
-        let nbytes = (nbits + 7) / 8;
+        let nbytes = nbits.div_ceil(8);
         let nbits = nbytes * 8;
         let mut filter = BytesMut::with_capacity(nbytes);
         filter.resize(nbytes, 0);
         // TODO: build the bloom filter
         for key in keys {
             let mut h = *key;
-            let delta = (h >> 17) | (h << 15); // h is the key hash
+            let delta = h.rotate_left(15); // h is the key hash
             for _ in 0..k {
                 let idx = (h as usize) % nbits;
                 filter.set_bit(idx, true);
@@ -115,9 +115,8 @@ impl Bloom {
             true
         } else {
             let nbits = self.filter.bit_len();
-            // let mut delta = h.rotate_left(15);
             // TODO: probe the bloom filter
-            let delta = (h >> 17) | (h << 15);
+            let delta = h.rotate_left(15);
             let mut mut_h = h;
             for i in 0..self.k {
                 let idx = (mut_h as usize) % nbits;
