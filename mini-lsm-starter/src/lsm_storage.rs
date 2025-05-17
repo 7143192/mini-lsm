@@ -39,7 +39,7 @@ use crate::lsm_iterator::{FusedIterator, LsmIterator};
 use crate::manifest::Manifest;
 use crate::mem_table::MemTable;
 use crate::mvcc::LsmMvccInner;
-use crate::table::{SsTable, SsTableIterator};
+use crate::table::{SsTable, SsTableBuilder, SsTableIterator};
 
 pub type BlockCache = moka::sync::Cache<(usize, usize), Arc<Block>>;
 
@@ -464,7 +464,37 @@ impl LsmStorageInner {
 
     /// Force flush the earliest-created immutable memtable to disk
     pub fn force_flush_next_imm_memtable(&self) -> Result<()> {
-        unimplemented!()
+        // acquire state lock first.
+        let state_lock = self.state_lock.lock();
+        let memtable_to_flush;
+        // get memtable to flush from the state snapshot.
+        let mut snapshot = {
+            let guard = self.state.read();
+            guard.as_ref().clone()
+        };
+        memtable_to_flush = snapshot.imm_memtables.pop();
+        if memtable_to_flush.is_none() {
+            return Ok(());
+        }
+        // flush the memtable into disk.
+        let mut sst_builder = SsTableBuilder::new(self.options.block_size);
+        let sst_id = memtable_to_flush.clone().unwrap().id();
+        memtable_to_flush.unwrap().flush(&mut sst_builder)?;
+        // update metadata stored in self.state.
+        let sst = sst_builder.build(
+            sst_id,
+            Some(self.block_cache.clone()),
+            self.path_of_sst(sst_id),
+        )?;
+        snapshot.l0_sstables.insert(0, sst_id);
+        snapshot.sstables.insert(sst_id, Arc::new(sst));
+        {
+            /* these 3 lines of code are genrated by Copilot */
+            // update the state snapshot.
+            let mut write_state = self.state.write();
+            *write_state = Arc::new(snapshot);
+        }
+        Ok(())
     }
 
     pub fn new_txn(&self) -> Result<()> {
