@@ -94,4 +94,8 @@ impl<
         self.use_which = self.decide_use_which_iter();
         Ok(())
     }
+
+    fn num_active_iterators(&self) -> usize {
+        self.a.num_active_iterators() + self.b.num_active_iterators()
+    }
 }
