@@ -31,7 +31,9 @@ pub use simple_leveled::{
 pub use tiered::{TieredCompactionController, TieredCompactionOptions, TieredCompactionTask};
 
 use crate::iterators::StorageIterator;
+use crate::iterators::concat_iterator::SstConcatIterator;
 use crate::iterators::merge_iterator::MergeIterator;
+use crate::iterators::two_merge_iterator::TwoMergeIterator;
 use crate::lsm_storage::{LsmStorageInner, LsmStorageState};
 use crate::table::{SsTable, SsTableBuilder, SsTableIterator};
 
@@ -150,12 +152,19 @@ impl LsmStorageInner {
                         SsTableIterator::create_and_seek_to_first(sst.clone()).unwrap(),
                     ));
                 });
-                l1_ssts.iter().for_each(|sst| {
-                    all_iters.push(Box::new(
-                        SsTableIterator::create_and_seek_to_first(sst.clone()).unwrap(),
-                    ));
-                });
-                let mut merge_iter = MergeIterator::create(all_iters);
+                /* start of version using concat iterator */
+                let l0_merge_iter = MergeIterator::create(all_iters);
+                let l1_concat_iter = SstConcatIterator::create_and_seek_to_first(l1_ssts)?;
+                let mut merge_iter = TwoMergeIterator::create(l0_merge_iter, l1_concat_iter)?;
+                /* end of version using concat iterator */
+                /* start of version not using concat iterator */
+                // l1_ssts.iter().for_each(|sst| {
+                //     all_iters.push(Box::new(
+                //         SsTableIterator::create_and_seek_to_first(sst.clone()).unwrap(),
+                //     ));
+                // });
+                // let mut merge_iter = MergeIterator::create(all_iters);
+                /* end of version not using concat iterator */
                 let mut sst_builder = SsTableBuilder::new(self.options.block_size);
                 while merge_iter.is_valid() {
                     // skip deleted key here.
@@ -211,12 +220,12 @@ impl LsmStorageInner {
         };
         // collect all l0 and l1 sstables to generate compactin task.
         let l0_sstables = snapshot.l0_sstables.clone();
-        let l1_sstables = snapshot.levels.get(0).unwrap().1.clone();
+        let l1_sstables = snapshot.levels.first().unwrap().1.clone();
         let l0_sstables_clone = l0_sstables.clone();
         let l1_sstables_clone = l1_sstables.clone();
         let full_compaction_task = CompactionTask::ForceFullCompaction {
-            l0_sstables: l0_sstables,
-            l1_sstables: l1_sstables,
+            l0_sstables,
+            l1_sstables,
         };
         // then call compact func to perform the real compaction.
         let compacted_sstables = self.compact(&full_compaction_task)?;

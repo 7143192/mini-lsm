@@ -402,6 +402,36 @@ impl LsmStorageInner {
                 return Ok(Some(bytes));
             }
         }
+        // if not return, search in all levels of sstables.
+        for (_, sst_ids) in snapshot.levels.iter() {
+            for sst_id in sst_ids.iter() {
+                let sst = snapshot.sstables.get(sst_id).unwrap();
+                // week 1 day 7: adds bloom filter check logic.
+                if let Some(bloom) = sst.bloom.as_ref() {
+                    if !bloom.may_contain(farmhash::fingerprint32(_key)) {
+                        continue;
+                    }
+                }
+                if !check_key_in_sst(
+                    _key,
+                    sst.first_key().as_key_slice(),
+                    sst.last_key().as_key_slice(),
+                ) {
+                    continue;
+                }
+                let sst_iter = SsTableIterator::create_and_seek_to_key(
+                    Arc::clone(sst),
+                    KeySlice::from_slice(_key),
+                )?;
+                if sst_iter.is_valid() {
+                    if sst_iter.value().is_empty() {
+                        return Ok(None);
+                    }
+                    let bytes = Bytes::copy_from_slice(sst_iter.value());
+                    return Ok(Some(bytes));
+                }
+            }
+        }
         Ok(None)
     }
 
@@ -574,13 +604,59 @@ impl LsmStorageInner {
         }
         // create ssTable MergeIterator.
         let sstable_merge_iter = MergeIterator::create(sst_iters);
+        let memtable_l0_sst_merge_iter =
+            TwoMergeIterator::create(memtable_merge_iter, sstable_merge_iter).unwrap();
+        // then create SstConcatIterator for l1 ssTables.
+        // let mut l1_ssts: Vec<Arc<SsTable>> = Vec::new();
+        let mut l1_sst_iters: Vec<Box<SsTableIterator>> = Vec::new();
+        for (_, sst_ids) in snapshot.levels.iter() {
+            for sst_id in sst_ids.iter() {
+                let sst = snapshot.sstables.get(sst_id).unwrap();
+                // skip not overlapped ssts.
+                if !check_sst_overlap(
+                    _lower,
+                    _upper,
+                    sst.first_key().as_key_slice(),
+                    sst.last_key().as_key_slice(),
+                ) {
+                    continue;
+                }
+                match _lower {
+                    Bound::Excluded(key) => {
+                        let mut sst_iter = SsTableIterator::create_and_seek_to_key(
+                            Arc::clone(sst),
+                            KeySlice::from_slice(key),
+                        )?;
+                        while sst_iter.is_valid() && sst_iter.key().raw_ref() <= key {
+                            let res = sst_iter.next();
+                            if res.is_err() {
+                                exit(0);
+                            }
+                        }
+                        l1_sst_iters.push(Box::new(sst_iter));
+                    }
+                    Bound::Included(key) => {
+                        let sst_iter = SsTableIterator::create_and_seek_to_key(
+                            Arc::clone(sst),
+                            KeySlice::from_slice(key),
+                        )?;
+                        l1_sst_iters.push(Box::new(sst_iter));
+                    }
+                    Bound::Unbounded => {
+                        let sst_iter = SsTableIterator::create_and_seek_to_first(Arc::clone(sst))?;
+                        l1_sst_iters.push(Box::new(sst_iter));
+                    }
+                }
+            }
+        }
+        // let mut l1_concat_iter = SstConcatIterator::create_and_seek_to_first(l1_ssts).unwrap();
+        // // then seek to the first key in the given range.
+        let l1_merge_iter = MergeIterator::create(l1_sst_iters);
+        let final_merge_iter =
+            TwoMergeIterator::create(memtable_l0_sst_merge_iter, l1_merge_iter).unwrap();
         // create and return result iter.
         Ok(FusedIterator::new(
-            LsmIterator::new(
-                TwoMergeIterator::create(memtable_merge_iter, sstable_merge_iter).unwrap(),
-                _upper,
-            )
-            .unwrap(),
+            LsmIterator::new(final_merge_iter, _upper).unwrap(),
         ))
     }
 }
