@@ -1,0 +1,1010 @@
+=== Iteration 0 ===
+--- After Flush ---
+L0 (1): [1]
+L1 (0): []
+L2 (0): []
+L3 (0): []
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 1/1=1.000x
+Maximum Space Usage: 1/1=1.000x
+Read Amplification: 1x
+
+=== Iteration 1 ===
+--- After Flush ---
+L0 (2): [1, 2]
+L1 (0): []
+L2 (0): []
+L3 (0): []
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [1, 2] Lower L1 [] -> [3, 4]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [1, 2]
+L2 (0): []
+L3 (0): []
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 0
+Upper L1 [3, 4] Lower L2 [] -> [5, 6]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (2): [3, 4]
+L3 (0): []
+--- Compaction Task ---
+compaction triggered at level 2 and 3 with size ratio 0
+Upper L2 [5, 6] Lower L3 [] -> [7, 8]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (0): []
+L3 (2): [5, 6]
+--- Compaction Task ---
+3 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 8/2=4.000x
+Maximum Space Usage: 4/2=2.000x
+Read Amplification: 1x
+
+=== Iteration 2 ===
+--- After Flush ---
+L0 (1): [9]
+L1 (0): []
+L2 (0): []
+L3 (2): [5, 6]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 9/3=3.000x
+Maximum Space Usage: 4/3=1.333x
+Read Amplification: 2x
+
+=== Iteration 3 ===
+--- After Flush ---
+L0 (2): [9, 10]
+L1 (0): []
+L2 (0): []
+L3 (2): [5, 6]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [9, 10] Lower L1 [] -> [11, 12]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [9, 10]
+L2 (0): []
+L3 (2): [5, 6]
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 0
+Upper L1 [11, 12] Lower L2 [] -> [13, 14]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (2): [11, 12]
+L3 (2): [5, 6]
+--- Compaction Task ---
+compaction triggered at level 2 and 3 with size ratio 1
+Upper L2 [13, 14] Lower L3 [7, 8] -> [15, 16, 17, 18]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (0): []
+L3 (4): [13, 14, 7, 8]
+--- Compaction Task ---
+3 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 18/4=4.500x
+Maximum Space Usage: 8/4=2.000x
+Read Amplification: 1x
+
+=== Iteration 4 ===
+--- After Flush ---
+L0 (1): [19]
+L1 (0): []
+L2 (0): []
+L3 (4): [13, 14, 7, 8]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 19/5=3.800x
+Maximum Space Usage: 8/5=1.600x
+Read Amplification: 2x
+
+=== Iteration 5 ===
+--- After Flush ---
+L0 (2): [19, 20]
+L1 (0): []
+L2 (0): []
+L3 (4): [13, 14, 7, 8]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [19, 20] Lower L1 [] -> [21, 22]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [19, 20]
+L2 (0): []
+L3 (4): [13, 14, 7, 8]
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 0
+Upper L1 [21, 22] Lower L2 [] -> [23, 24]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (2): [21, 22]
+L3 (4): [13, 14, 7, 8]
+--- Compaction Task ---
+2 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 24/6=4.000x
+Maximum Space Usage: 8/6=1.333x
+Read Amplification: 2x
+
+=== Iteration 6 ===
+--- After Flush ---
+L0 (1): [25]
+L1 (0): []
+L2 (2): [21, 22]
+L3 (4): [13, 14, 7, 8]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 25/7=3.571x
+Maximum Space Usage: 8/7=1.143x
+Read Amplification: 3x
+
+=== Iteration 7 ===
+--- After Flush ---
+L0 (2): [25, 26]
+L1 (0): []
+L2 (2): [21, 22]
+L3 (4): [13, 14, 7, 8]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [25, 26] Lower L1 [] -> [27, 28]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [25, 26]
+L2 (2): [21, 22]
+L3 (4): [13, 14, 7, 8]
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 1
+Upper L1 [27, 28] Lower L2 [23, 24] -> [29, 30, 31, 32]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (4): [27, 28, 23, 24]
+L3 (4): [13, 14, 7, 8]
+--- Compaction Task ---
+compaction triggered at level 2 and 3 with size ratio 1
+Upper L2 [29, 30, 31, 32] Lower L3 [15, 16, 17, 18] -> [33, 34, 35, 36, 37, 38, 39, 40]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (0): []
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+3 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 40/8=5.000x
+Maximum Space Usage: 16/8=2.000x
+Read Amplification: 1x
+
+=== Iteration 8 ===
+--- After Flush ---
+L0 (1): [41]
+L1 (0): []
+L2 (0): []
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 41/9=4.556x
+Maximum Space Usage: 16/9=1.778x
+Read Amplification: 2x
+
+=== Iteration 9 ===
+--- After Flush ---
+L0 (2): [41, 42]
+L1 (0): []
+L2 (0): []
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [41, 42] Lower L1 [] -> [43, 44]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [41, 42]
+L2 (0): []
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 0
+Upper L1 [43, 44] Lower L2 [] -> [45, 46]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (2): [43, 44]
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+2 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 46/10=4.600x
+Maximum Space Usage: 16/10=1.600x
+Read Amplification: 2x
+
+=== Iteration 10 ===
+--- After Flush ---
+L0 (1): [47]
+L1 (0): []
+L2 (2): [43, 44]
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 47/11=4.273x
+Maximum Space Usage: 16/11=1.455x
+Read Amplification: 3x
+
+=== Iteration 11 ===
+--- After Flush ---
+L0 (2): [47, 48]
+L1 (0): []
+L2 (2): [43, 44]
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [47, 48] Lower L1 [] -> [49, 50]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [47, 48]
+L2 (2): [43, 44]
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 1
+Upper L1 [49, 50] Lower L2 [45, 46] -> [51, 52, 53, 54]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (4): [49, 50, 45, 46]
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+2 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 54/12=4.500x
+Maximum Space Usage: 16/12=1.333x
+Read Amplification: 2x
+
+=== Iteration 12 ===
+--- After Flush ---
+L0 (1): [55]
+L1 (0): []
+L2 (4): [49, 50, 45, 46]
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 55/13=4.231x
+Maximum Space Usage: 16/13=1.231x
+Read Amplification: 3x
+
+=== Iteration 13 ===
+--- After Flush ---
+L0 (2): [55, 56]
+L1 (0): []
+L2 (4): [49, 50, 45, 46]
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [55, 56] Lower L1 [] -> [57, 58]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [55, 56]
+L2 (4): [49, 50, 45, 46]
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+1 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 58/14=4.143x
+Maximum Space Usage: 16/14=1.143x
+Read Amplification: 3x
+
+=== Iteration 14 ===
+--- After Flush ---
+L0 (1): [59]
+L1 (2): [55, 56]
+L2 (4): [49, 50, 45, 46]
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 59/15=3.933x
+Maximum Space Usage: 16/15=1.067x
+Read Amplification: 4x
+
+=== Iteration 15 ===
+--- After Flush ---
+L0 (2): [59, 60]
+L1 (2): [55, 56]
+L2 (4): [49, 50, 45, 46]
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [59, 60] Lower L1 [57, 58] -> [61, 62, 63, 64]
+--- After Compaction ---
+L0 (0): []
+L1 (4): [59, 60, 57, 58]
+L2 (4): [49, 50, 45, 46]
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 1
+Upper L1 [61, 62, 63, 64] Lower L2 [51, 52, 53, 54] -> [65, 66, 67, 68, 69, 70, 71, 72]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (8): [61, 62, 63, 64, 51, 52, 53, 54]
+L3 (8): [29, 30, 31, 32, 15, 16, 17, 18]
+--- Compaction Task ---
+compaction triggered at level 2 and 3 with size ratio 1
+Upper L2 [65, 66, 67, 68, 69, 70, 71, 72] Lower L3 [33, 34, 35, 36, 37, 38, 39, 40] -> [73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (0): []
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+3 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 88/16=5.500x
+Maximum Space Usage: 32/16=2.000x
+Read Amplification: 1x
+
+=== Iteration 16 ===
+--- After Flush ---
+L0 (1): [89]
+L1 (0): []
+L2 (0): []
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 89/17=5.235x
+Maximum Space Usage: 32/17=1.882x
+Read Amplification: 2x
+
+=== Iteration 17 ===
+--- After Flush ---
+L0 (2): [89, 90]
+L1 (0): []
+L2 (0): []
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [89, 90] Lower L1 [] -> [91, 92]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [89, 90]
+L2 (0): []
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 0
+Upper L1 [91, 92] Lower L2 [] -> [93, 94]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (2): [91, 92]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+2 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 94/18=5.222x
+Maximum Space Usage: 32/18=1.778x
+Read Amplification: 2x
+
+=== Iteration 18 ===
+--- After Flush ---
+L0 (1): [95]
+L1 (0): []
+L2 (2): [91, 92]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 95/19=5.000x
+Maximum Space Usage: 32/19=1.684x
+Read Amplification: 3x
+
+=== Iteration 19 ===
+--- After Flush ---
+L0 (2): [95, 96]
+L1 (0): []
+L2 (2): [91, 92]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [95, 96] Lower L1 [] -> [97, 98]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [95, 96]
+L2 (2): [91, 92]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 1
+Upper L1 [97, 98] Lower L2 [93, 94] -> [99, 100, 101, 102]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (4): [97, 98, 93, 94]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+2 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 102/20=5.100x
+Maximum Space Usage: 32/20=1.600x
+Read Amplification: 2x
+
+=== Iteration 20 ===
+--- After Flush ---
+L0 (1): [103]
+L1 (0): []
+L2 (4): [97, 98, 93, 94]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 103/21=4.905x
+Maximum Space Usage: 32/21=1.524x
+Read Amplification: 3x
+
+=== Iteration 21 ===
+--- After Flush ---
+L0 (2): [103, 104]
+L1 (0): []
+L2 (4): [97, 98, 93, 94]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [103, 104] Lower L1 [] -> [105, 106]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [103, 104]
+L2 (4): [97, 98, 93, 94]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+1 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 106/22=4.818x
+Maximum Space Usage: 32/22=1.455x
+Read Amplification: 3x
+
+=== Iteration 22 ===
+--- After Flush ---
+L0 (1): [107]
+L1 (2): [103, 104]
+L2 (4): [97, 98, 93, 94]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 107/23=4.652x
+Maximum Space Usage: 32/23=1.391x
+Read Amplification: 4x
+
+=== Iteration 23 ===
+--- After Flush ---
+L0 (2): [107, 108]
+L1 (2): [103, 104]
+L2 (4): [97, 98, 93, 94]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [107, 108] Lower L1 [105, 106] -> [109, 110, 111, 112]
+--- After Compaction ---
+L0 (0): []
+L1 (4): [107, 108, 105, 106]
+L2 (4): [97, 98, 93, 94]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 1
+Upper L1 [109, 110, 111, 112] Lower L2 [99, 100, 101, 102] -> [113, 114, 115, 116, 117, 118, 119, 120]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (8): [109, 110, 111, 112, 99, 100, 101, 102]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+2 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 120/24=5.000x
+Maximum Space Usage: 32/24=1.333x
+Read Amplification: 2x
+
+=== Iteration 24 ===
+--- After Flush ---
+L0 (1): [121]
+L1 (0): []
+L2 (8): [109, 110, 111, 112, 99, 100, 101, 102]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 121/25=4.840x
+Maximum Space Usage: 32/25=1.280x
+Read Amplification: 3x
+
+=== Iteration 25 ===
+--- After Flush ---
+L0 (2): [121, 122]
+L1 (0): []
+L2 (8): [109, 110, 111, 112, 99, 100, 101, 102]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [121, 122] Lower L1 [] -> [123, 124]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [121, 122]
+L2 (8): [109, 110, 111, 112, 99, 100, 101, 102]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+1 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 124/26=4.769x
+Maximum Space Usage: 32/26=1.231x
+Read Amplification: 3x
+
+=== Iteration 26 ===
+--- After Flush ---
+L0 (1): [125]
+L1 (2): [121, 122]
+L2 (8): [109, 110, 111, 112, 99, 100, 101, 102]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 125/27=4.630x
+Maximum Space Usage: 32/27=1.185x
+Read Amplification: 4x
+
+=== Iteration 27 ===
+--- After Flush ---
+L0 (2): [125, 126]
+L1 (2): [121, 122]
+L2 (8): [109, 110, 111, 112, 99, 100, 101, 102]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [125, 126] Lower L1 [123, 124] -> [127, 128, 129, 130]
+--- After Compaction ---
+L0 (0): []
+L1 (4): [125, 126, 123, 124]
+L2 (8): [109, 110, 111, 112, 99, 100, 101, 102]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+1 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 130/28=4.643x
+Maximum Space Usage: 32/28=1.143x
+Read Amplification: 3x
+
+=== Iteration 28 ===
+--- After Flush ---
+L0 (1): [131]
+L1 (4): [125, 126, 123, 124]
+L2 (8): [109, 110, 111, 112, 99, 100, 101, 102]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 131/29=4.517x
+Maximum Space Usage: 32/29=1.103x
+Read Amplification: 4x
+
+=== Iteration 29 ===
+--- After Flush ---
+L0 (2): [131, 132]
+L1 (4): [125, 126, 123, 124]
+L2 (8): [109, 110, 111, 112, 99, 100, 101, 102]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [131, 132] Lower L1 [127, 128, 129, 130] -> [133, 134, 135, 136, 137, 138]
+--- After Compaction ---
+L0 (0): []
+L1 (6): [131, 132, 127, 128, 129, 130]
+L2 (8): [109, 110, 111, 112, 99, 100, 101, 102]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 1.3333333333333333
+Upper L1 [133, 134, 135, 136, 137, 138] Lower L2 [113, 114, 115, 116, 117, 118, 119, 120] -> [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (14): [133, 134, 135, 136, 137, 138, 113, 114, 115, 116, 117, 118, 119, 120]
+L3 (16): [65, 66, 67, 68, 69, 70, 71, 72, 33, 34, 35, 36, 37, 38, 39, 40]
+--- Compaction Task ---
+compaction triggered at level 2 and 3 with size ratio 1.1428571428571428
+Upper L2 [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152] Lower L3 [73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88] -> [153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (0): []
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+3 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 182/30=6.067x
+Maximum Space Usage: 60/30=2.000x
+Read Amplification: 1x
+
+=== Iteration 30 ===
+--- After Flush ---
+L0 (1): [183]
+L1 (0): []
+L2 (0): []
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 183/31=5.903x
+Maximum Space Usage: 60/31=1.935x
+Read Amplification: 2x
+
+=== Iteration 31 ===
+--- After Flush ---
+L0 (2): [183, 184]
+L1 (0): []
+L2 (0): []
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [183, 184] Lower L1 [] -> [185, 186]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [183, 184]
+L2 (0): []
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 0
+Upper L1 [185, 186] Lower L2 [] -> [187, 188]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (2): [185, 186]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+2 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 188/32=5.875x
+Maximum Space Usage: 60/32=1.875x
+Read Amplification: 2x
+
+=== Iteration 32 ===
+--- After Flush ---
+L0 (1): [189]
+L1 (0): []
+L2 (2): [185, 186]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 189/33=5.727x
+Maximum Space Usage: 60/33=1.818x
+Read Amplification: 3x
+
+=== Iteration 33 ===
+--- After Flush ---
+L0 (2): [189, 190]
+L1 (0): []
+L2 (2): [185, 186]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [189, 190] Lower L1 [] -> [191, 192]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [189, 190]
+L2 (2): [185, 186]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 1
+Upper L1 [191, 192] Lower L2 [187, 188] -> [193, 194, 195, 196]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (4): [191, 192, 187, 188]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+2 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 196/34=5.765x
+Maximum Space Usage: 60/34=1.765x
+Read Amplification: 2x
+
+=== Iteration 34 ===
+--- After Flush ---
+L0 (1): [197]
+L1 (0): []
+L2 (4): [191, 192, 187, 188]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 197/35=5.629x
+Maximum Space Usage: 60/35=1.714x
+Read Amplification: 3x
+
+=== Iteration 35 ===
+--- After Flush ---
+L0 (2): [197, 198]
+L1 (0): []
+L2 (4): [191, 192, 187, 188]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [197, 198] Lower L1 [] -> [199, 200]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [197, 198]
+L2 (4): [191, 192, 187, 188]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+1 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 200/36=5.556x
+Maximum Space Usage: 60/36=1.667x
+Read Amplification: 3x
+
+=== Iteration 36 ===
+--- After Flush ---
+L0 (1): [201]
+L1 (2): [197, 198]
+L2 (4): [191, 192, 187, 188]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 201/37=5.432x
+Maximum Space Usage: 60/37=1.622x
+Read Amplification: 4x
+
+=== Iteration 37 ===
+--- After Flush ---
+L0 (2): [201, 202]
+L1 (2): [197, 198]
+L2 (4): [191, 192, 187, 188]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [201, 202] Lower L1 [199, 200] -> [203, 204, 205, 206]
+--- After Compaction ---
+L0 (0): []
+L1 (4): [201, 202, 199, 200]
+L2 (4): [191, 192, 187, 188]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 1
+Upper L1 [203, 204, 205, 206] Lower L2 [193, 194, 195, 196] -> [207, 208, 209, 210, 211, 212, 213, 214]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (8): [203, 204, 205, 206, 193, 194, 195, 196]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+2 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 214/38=5.632x
+Maximum Space Usage: 60/38=1.579x
+Read Amplification: 2x
+
+=== Iteration 38 ===
+--- After Flush ---
+L0 (1): [215]
+L1 (0): []
+L2 (8): [203, 204, 205, 206, 193, 194, 195, 196]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 215/39=5.513x
+Maximum Space Usage: 60/39=1.538x
+Read Amplification: 3x
+
+=== Iteration 39 ===
+--- After Flush ---
+L0 (2): [215, 216]
+L1 (0): []
+L2 (8): [203, 204, 205, 206, 193, 194, 195, 196]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [215, 216] Lower L1 [] -> [217, 218]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [215, 216]
+L2 (8): [203, 204, 205, 206, 193, 194, 195, 196]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+1 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 218/40=5.450x
+Maximum Space Usage: 60/40=1.500x
+Read Amplification: 3x
+
+=== Iteration 40 ===
+--- After Flush ---
+L0 (1): [219]
+L1 (2): [215, 216]
+L2 (8): [203, 204, 205, 206, 193, 194, 195, 196]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 219/41=5.341x
+Maximum Space Usage: 60/41=1.463x
+Read Amplification: 4x
+
+=== Iteration 41 ===
+--- After Flush ---
+L0 (2): [219, 220]
+L1 (2): [215, 216]
+L2 (8): [203, 204, 205, 206, 193, 194, 195, 196]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [219, 220] Lower L1 [217, 218] -> [221, 222, 223, 224]
+--- After Compaction ---
+L0 (0): []
+L1 (4): [219, 220, 217, 218]
+L2 (8): [203, 204, 205, 206, 193, 194, 195, 196]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+1 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 224/42=5.333x
+Maximum Space Usage: 60/42=1.429x
+Read Amplification: 3x
+
+=== Iteration 42 ===
+--- After Flush ---
+L0 (1): [225]
+L1 (4): [219, 220, 217, 218]
+L2 (8): [203, 204, 205, 206, 193, 194, 195, 196]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 225/43=5.233x
+Maximum Space Usage: 60/43=1.395x
+Read Amplification: 4x
+
+=== Iteration 43 ===
+--- After Flush ---
+L0 (2): [225, 226]
+L1 (4): [219, 220, 217, 218]
+L2 (8): [203, 204, 205, 206, 193, 194, 195, 196]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [225, 226] Lower L1 [221, 222, 223, 224] -> [227, 228, 229, 230, 231, 232]
+--- After Compaction ---
+L0 (0): []
+L1 (6): [225, 226, 221, 222, 223, 224]
+L2 (8): [203, 204, 205, 206, 193, 194, 195, 196]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+compaction triggered at level 1 and 2 with size ratio 1.3333333333333333
+Upper L1 [227, 228, 229, 230, 231, 232] Lower L2 [207, 208, 209, 210, 211, 212, 213, 214] -> [233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246]
+--- After Compaction ---
+L0 (0): []
+L1 (0): []
+L2 (14): [227, 228, 229, 230, 231, 232, 207, 208, 209, 210, 211, 212, 213, 214]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+2 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 246/44=5.591x
+Maximum Space Usage: 60/44=1.364x
+Read Amplification: 2x
+
+=== Iteration 44 ===
+--- After Flush ---
+L0 (1): [247]
+L1 (0): []
+L2 (14): [227, 228, 229, 230, 231, 232, 207, 208, 209, 210, 211, 212, 213, 214]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 247/45=5.489x
+Maximum Space Usage: 60/45=1.333x
+Read Amplification: 3x
+
+=== Iteration 45 ===
+--- After Flush ---
+L0 (2): [247, 248]
+L1 (0): []
+L2 (14): [227, 228, 229, 230, 231, 232, 207, 208, 209, 210, 211, 212, 213, 214]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [247, 248] Lower L1 [] -> [249, 250]
+--- After Compaction ---
+L0 (0): []
+L1 (2): [247, 248]
+L2 (14): [227, 228, 229, 230, 231, 232, 207, 208, 209, 210, 211, 212, 213, 214]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+1 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 250/46=5.435x
+Maximum Space Usage: 60/46=1.304x
+Read Amplification: 3x
+
+=== Iteration 46 ===
+--- After Flush ---
+L0 (1): [251]
+L1 (2): [247, 248]
+L2 (14): [227, 228, 229, 230, 231, 232, 207, 208, 209, 210, 211, 212, 213, 214]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 251/47=5.340x
+Maximum Space Usage: 60/47=1.277x
+Read Amplification: 4x
+
+=== Iteration 47 ===
+--- After Flush ---
+L0 (2): [251, 252]
+L1 (2): [247, 248]
+L2 (14): [227, 228, 229, 230, 231, 232, 207, 208, 209, 210, 211, 212, 213, 214]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [251, 252] Lower L1 [249, 250] -> [253, 254, 255, 256]
+--- After Compaction ---
+L0 (0): []
+L1 (4): [251, 252, 249, 250]
+L2 (14): [227, 228, 229, 230, 231, 232, 207, 208, 209, 210, 211, 212, 213, 214]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+1 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 256/48=5.333x
+Maximum Space Usage: 60/48=1.250x
+Read Amplification: 3x
+
+=== Iteration 48 ===
+--- After Flush ---
+L0 (1): [257]
+L1 (4): [251, 252, 249, 250]
+L2 (14): [227, 228, 229, 230, 231, 232, 207, 208, 209, 210, 211, 212, 213, 214]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+no compaction triggered
+--- Statistics ---
+Write Amplification: 257/49=5.245x
+Maximum Space Usage: 60/49=1.224x
+Read Amplification: 4x
+
+=== Iteration 49 ===
+--- After Flush ---
+L0 (2): [257, 258]
+L1 (4): [251, 252, 249, 250]
+L2 (14): [227, 228, 229, 230, 231, 232, 207, 208, 209, 210, 211, 212, 213, 214]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+compaction triggered at level 0 because L0 has 2 SSTs >= 2
+Upper L0 [257, 258] Lower L1 [253, 254, 255, 256] -> [259, 260, 261, 262, 263, 264]
+--- After Compaction ---
+L0 (0): []
+L1 (6): [257, 258, 253, 254, 255, 256]
+L2 (14): [227, 228, 229, 230, 231, 232, 207, 208, 209, 210, 211, 212, 213, 214]
+L3 (30): [139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+--- Compaction Task ---
+1 compaction triggered in this iteration
+--- Statistics ---
+Write Amplification: 264/50=5.280x
+Maximum Space Usage: 60/50=1.200x
+Read Amplification: 3x
+
