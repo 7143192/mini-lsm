@@ -528,7 +528,11 @@ impl LsmStorageInner {
             Some(self.block_cache.clone()),
             self.path_of_sst(sst_id),
         )?;
-        snapshot.l0_sstables.insert(0, sst_id);
+        if self.compaction_controller.flush_to_l0() {
+            snapshot.l0_sstables.insert(0, sst_id);
+        } else {
+            snapshot.levels.insert(0, (sst_id, vec![sst_id]));
+        }
         snapshot.sstables.insert(sst_id, Arc::new(sst));
         {
             /* these 3 lines of code are genrated by Copilot */

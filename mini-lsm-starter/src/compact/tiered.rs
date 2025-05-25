@@ -69,26 +69,33 @@ impl TieredCompactionController {
         let size_ratio = (self.options.size_ratio as f64 + 100.0) / 100.0;
         for i in 1.._snapshot.levels.len() {
             let cur_level_num = _snapshot.levels[i].1.len();
-            if cur_level_num as f64 / prev_sum as f64 >= size_ratio {
-                if i >= self.options.min_merge_width {
-                    // case 3: size ratio is too large and levels to compact is enough, need to perform a compaction.
-                    return Some(TieredCompactionTask {
-                        tiers: _snapshot.levels[..i].to_vec(),
-                        bottom_tier_included: false,
-                    });
-                }
+            if cur_level_num as f64 / prev_sum as f64 >= size_ratio
+                && i >= self.options.min_merge_width
+            {
+                // case 3: size ratio is too large and levels to compact is enough, need to perform a compaction.
+                return Some(TieredCompactionTask {
+                    tiers: _snapshot.levels[..i].to_vec(),
+                    bottom_tier_included: false,
+                });
             }
             prev_sum += cur_level_num;
         }
         // case 4: force a compaction if the level number is too large.
-        if self.options.max_merge_width.is_none() || _snapshot.levels.len() >= self.options.max_merge_width.unwrap() {
-        return Some(TieredCompactionTask {
-            tiers: _snapshot.levels.clone(),
-            bottom_tier_included: true,
-        });
-    }
+        if self.options.max_merge_width.is_none()
+            || _snapshot.levels.len() >= self.options.max_merge_width.unwrap()
+        {
+            return Some(TieredCompactionTask {
+                tiers: _snapshot.levels.clone(),
+                bottom_tier_included: true,
+            });
+        }
         Some(TieredCompactionTask {
-            tiers: _snapshot.levels.iter().take(self.options.max_merge_width.unwrap()).cloned().collect::<Vec<_>>(),
+            tiers: _snapshot
+                .levels
+                .iter()
+                .take(self.options.max_merge_width.unwrap())
+                .cloned()
+                .collect::<Vec<_>>(),
             bottom_tier_included: false,
         })
     }
@@ -102,7 +109,11 @@ impl TieredCompactionController {
         let mut snapshot = _snapshot.clone();
         let mut files_to_remove: Vec<usize> = Vec::new();
         let mut new_levels: Vec<(usize, Vec<usize>)> = Vec::new();
-        let mut tiers_to_remove = _task.tiers.iter().map(|(id, vec)| (*id, vec.clone())).collect::<HashMap<_, _>>();
+        let mut tiers_to_remove = _task
+            .tiers
+            .iter()
+            .map(|(id, vec)| (*id, vec.clone()))
+            .collect::<HashMap<_, _>>();
         let mut new_level_added = false;
         for (level_id, sst_ids) in _snapshot.levels.iter() {
             if let Some(level_files_to_remove) = tiers_to_remove.remove(level_id) {
@@ -110,11 +121,9 @@ impl TieredCompactionController {
             } else {
                 new_levels.push((*level_id, sst_ids.clone()));
             }
-            if tiers_to_remove.is_empty() {
-                if !new_level_added {
-                    new_level_added = true;
-                    new_levels.push((_output[0], _output.to_vec()));
-                }
+            if tiers_to_remove.is_empty() && !new_level_added {
+                new_level_added = true;
+                new_levels.push((_output[0], _output.to_vec()));
             }
         }
         snapshot.levels = new_levels;
