@@ -122,7 +122,6 @@ impl SimpleLeveledCompactionController {
         match _task.upper_level {
             None => {
                 // l0 + l1 compaction.
-                let l1_sst_ids = snapshot.levels[0].1.clone();
                 files_to_remove.extend(&_task.upper_level_sst_ids);
                 let mut l0_ssts_compacted = _task
                     .upper_level_sst_ids
@@ -137,19 +136,16 @@ impl SimpleLeveledCompactionController {
                     .collect::<Vec<_>>();
                 assert!(l0_ssts_compacted.is_empty());
                 snapshot.l0_sstables = new_l0_sstables;
-                snapshot.levels[0].1.clear();
+                files_to_remove.extend(&snapshot.levels[0].1);
                 snapshot.levels[0].1 = _output.to_vec();
-                files_to_remove.extend(l1_sst_ids);
             }
             Some(level_id) => {
                 // l_i + l_(i+1) (i > 0) compaction.
-                let upper_level_sst_ids = snapshot.levels[level_id - 1].1.clone();
-                let lower_level_sst_ids = snapshot.levels[_task.lower_level - 1].1.clone();
+                files_to_remove.extend(&_task.upper_level_sst_ids);
                 snapshot.levels[level_id - 1].1.clear();
+                files_to_remove.extend(&snapshot.levels[_task.lower_level - 1].1);
                 snapshot.levels[_task.lower_level - 1].1.clear();
                 snapshot.levels[_task.lower_level - 1].1 = _output.to_vec();
-                files_to_remove.extend(upper_level_sst_ids);
-                files_to_remove.extend(lower_level_sst_ids);
             }
         }
         (snapshot, files_to_remove)

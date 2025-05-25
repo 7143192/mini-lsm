@@ -355,6 +355,8 @@ impl LsmStorageInner {
             return Ok(());
         }
         // then perform the compaction according to the compaction task.
+        println!("before compaction:");
+        self.dump_structure();
         let compaction_task = compaction_task.unwrap();
         let compacted_sstables = self.compact(&compaction_task)?;
         let output: Vec<usize> = compacted_sstables.iter().map(|sst| sst.sst_id()).collect();
@@ -368,7 +370,6 @@ impl LsmStorageInner {
             let (mut snapshot, files_to_remove) = self
                 .compaction_controller
                 .apply_compaction_result(&snapshot, &compaction_task, &output, false);
-            self.dump_structure();
             for file_to_remove in files_to_remove.iter() {
                 snapshot.sstables.remove(file_to_remove);
                 ssts_to_remove.push(*file_to_remove);
@@ -376,6 +377,11 @@ impl LsmStorageInner {
             let mut write_state = self.state.write();
             *write_state = Arc::new(snapshot);
             drop(write_state);
+            println!(
+                "files to delete after a compaction:{:?}, files to add:{:?}",
+                ssts_to_remove,
+                output.clone()
+            );
             ssts_to_remove
         };
         for file_to_remove in files_to_remove.iter() {
@@ -384,6 +390,8 @@ impl LsmStorageInner {
                 eprintln!("remove sstable failed: {}", e);
             }
         }
+        println!("after compaction:");
+        self.dump_structure();
         Ok(())
     }
 

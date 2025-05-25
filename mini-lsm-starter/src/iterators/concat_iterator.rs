@@ -82,36 +82,40 @@ impl StorageIterator for SstConcatIterator {
     type KeyType<'a> = KeySlice<'a>;
 
     fn key(&self) -> KeySlice {
-        self.current.as_ref().unwrap().key()
+        self.current
+            .as_ref()
+            .map(SsTableIterator::key)
+            .unwrap_or_default()
     }
 
     fn value(&self) -> &[u8] {
-        self.current.as_ref().unwrap().value()
+        self.current
+            .as_ref()
+            .map(SsTableIterator::value)
+            .unwrap_or_default()
     }
 
     fn is_valid(&self) -> bool {
-        if self.current.is_none() {
-            return false;
-        }
-        if self.next_sst_idx >= self.sstables.len() && !self.current.as_ref().unwrap().is_valid() {
-            return false;
-        }
-        true
+        self.current
+            .as_ref()
+            .map(SsTableIterator::is_valid)
+            .unwrap_or_default()
     }
 
     fn next(&mut self) -> Result<()> {
-        self.current.as_mut().unwrap().next()?;
-        if !self.current.as_ref().unwrap().is_valid() {
+        if let Some(current) = self.current.as_mut() {
+            current.next()?;
+        }
+
+        if !self.is_valid() {
+            let idx = self.next_sst_idx;
             self.next_sst_idx += 1;
-            if self.next_sst_idx >= self.sstables.len() {
-                self.current = None;
-            } else {
-                self.current = Some(SsTableIterator::create_and_seek_to_first(
-                    self.sstables[self.next_sst_idx].clone(),
-                )?);
-                self.next_sst_idx += 1;
+
+            if let Some(sst) = self.sstables.get(idx) {
+                self.current = Some(SsTableIterator::create_and_seek_to_first(sst.clone())?);
             }
         }
+
         Ok(())
     }
 
