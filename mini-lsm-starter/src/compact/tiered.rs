@@ -109,11 +109,10 @@ impl TieredCompactionController {
         let mut snapshot = _snapshot.clone();
         let mut files_to_remove: Vec<usize> = Vec::new();
         let mut new_levels: Vec<(usize, Vec<usize>)> = Vec::new();
-        let mut tiers_to_remove = _task
-            .tiers
-            .iter()
-            .map(|(id, vec)| (*id, vec.clone()))
-            .collect::<HashMap<_, _>>();
+        let mut tiers_to_remove: HashMap<usize, Vec<usize>> = HashMap::new();
+        for (level_id, sst_ids) in _task.tiers.clone().iter() {
+            tiers_to_remove.insert(*level_id, sst_ids.clone());
+        }
         let mut new_level_added = false;
         for (level_id, sst_ids) in _snapshot.levels.iter() {
             if let Some(level_files_to_remove) = tiers_to_remove.remove(level_id) {
