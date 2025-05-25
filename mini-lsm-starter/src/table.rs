@@ -25,7 +25,6 @@ use std::sync::Arc;
 
 use anyhow::Result;
 pub use builder::SsTableBuilder;
-use bytes::Bytes;
 use bytes::{Buf, BufMut};
 pub use iterator::SsTableIterator;
 
@@ -225,11 +224,11 @@ impl SsTable {
         for i in 1..meta_num {
             let first_key = self.block_meta[i].first_key.clone();
             if first_key.as_key_slice() > key {
-                println!(
-                    "first key:{:?}, target key:{:?}",
-                    Bytes::copy_from_slice(first_key.raw_ref()),
-                    Bytes::copy_from_slice(key.raw_ref())
-                );
+                // println!(
+                //     "first key:{:?}, target key:{:?}",
+                //     Bytes::copy_from_slice(first_key.raw_ref()),
+                //     Bytes::copy_from_slice(key.raw_ref())
+                // );
                 res = i - 1;
                 break;
             }

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
+
 use serde::{Deserialize, Serialize};
 
 use crate::lsm_storage::LsmStorageState;
@@ -57,17 +59,23 @@ impl SimpleLeveledCompactionController {
         let l0_file_nums = _snapshot.l0_sstables.len();
         if l0_file_nums >= self.options.level0_file_num_compaction_trigger {
             // case 1: level 0 contains too many files, trigger a compaction.
-            println!("compaction triggered at level 0 because L0 has {} SSTs >= {}", l0_file_nums, self.options.level0_file_num_compaction_trigger);
+            println!(
+                "compaction triggered at level 0 because L0 has {} SSTs >= {}",
+                l0_file_nums, self.options.level0_file_num_compaction_trigger
+            );
+            println!("level ssts to compact:{:?}", _snapshot.l0_sstables.clone());
             return Some(SimpleLeveledCompactionTask {
                 upper_level: None,
                 upper_level_sst_ids: _snapshot.l0_sstables.clone(),
                 lower_level: 1,
                 lower_level_sst_ids: _snapshot.levels[0].1.clone(),
                 is_lower_level_bottom_level: false,
-            })
+            });
         }
         for i in 0..self.options.max_levels {
-            if i == 0 && _snapshot.l0_sstables.len() < self.options.level0_file_num_compaction_trigger {
+            if i == 0
+                && _snapshot.l0_sstables.len() < self.options.level0_file_num_compaction_trigger
+            {
                 continue;
             }
             let lower_level = i + 1;
@@ -79,7 +87,10 @@ impl SimpleLeveledCompactionController {
                 } else {
                     upper_level_sst_ids.extend(_snapshot.levels[i - 1].1.clone());
                 }
-                println!("compaction triggered at level {} and {} with size ratio {}", i, lower_level, size_ratio);
+                println!(
+                    "compaction triggered at level {} and {} with size ratio {}",
+                    i, lower_level, size_ratio
+                );
                 return Some(SimpleLeveledCompactionTask {
                     upper_level: Some(i),
                     upper_level_sst_ids,
@@ -111,24 +122,36 @@ impl SimpleLeveledCompactionController {
         match _task.upper_level {
             None => {
                 // l0 + l1 compaction.
-                let l0_sst_ids = snapshot.l0_sstables.clone();
                 let l1_sst_ids = snapshot.levels[0].1.clone();
-                snapshot.l0_sstables.clear();
+                files_to_remove.extend(&_task.upper_level_sst_ids);
+                let mut l0_ssts_compacted = _task
+                    .upper_level_sst_ids
+                    .iter()
+                    .copied()
+                    .collect::<HashSet<_>>();
+                let new_l0_sstables = snapshot
+                    .l0_sstables
+                    .iter()
+                    .copied()
+                    .filter(|x| !l0_ssts_compacted.remove(x))
+                    .collect::<Vec<_>>();
+                assert!(l0_ssts_compacted.is_empty());
+                snapshot.l0_sstables = new_l0_sstables;
+                snapshot.levels[0].1.clear();
                 snapshot.levels[0].1 = _output.to_vec();
-                files_to_remove.extend(l0_sst_ids);
                 files_to_remove.extend(l1_sst_ids);
-            },
+            }
             Some(level_id) => {
                 // l_i + l_(i+1) (i > 0) compaction.
                 let upper_level_sst_ids = snapshot.levels[level_id - 1].1.clone();
                 let lower_level_sst_ids = snapshot.levels[_task.lower_level - 1].1.clone();
                 snapshot.levels[level_id - 1].1.clear();
+                snapshot.levels[_task.lower_level - 1].1.clear();
                 snapshot.levels[_task.lower_level - 1].1 = _output.to_vec();
                 files_to_remove.extend(upper_level_sst_ids);
                 files_to_remove.extend(lower_level_sst_ids);
-            },
+            }
         }
         (snapshot, files_to_remove)
-
     }
 }
