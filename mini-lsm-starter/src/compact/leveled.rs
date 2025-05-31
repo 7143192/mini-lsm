@@ -78,38 +78,43 @@ impl LeveledCompactionController {
         &self,
         snapshot: &LsmStorageState,
     ) -> Option<LeveledCompactionTask> {
-        // step 1: compute target level size
-        let mut target_level_size = (0..self.options.max_levels).map(|_| 0).collect::<Vec<_>>(); // exclude level 0
+        let base_level_size_bytes = self.options.base_level_size_mb * 1024 * 1024;
+        // initialize target_level_size and real_level_size first.
+        let mut target_level_size: Vec<usize> = Vec::with_capacity(self.options.max_levels);
         let mut real_level_size = Vec::with_capacity(self.options.max_levels);
         let mut base_level = self.options.max_levels;
         for i in 0..self.options.max_levels {
+            target_level_size.push(0_usize);
             real_level_size.push(
                 snapshot.levels[i]
                     .1
                     .iter()
-                    .map(|x| snapshot.sstables.get(x).unwrap().table_size())
-                    .sum::<u64>() as usize,
+                    .map(|x| snapshot.sstables.get(x).unwrap().table_size() as usize)
+                    .sum::<usize>(),
             );
         }
-        let base_level_size_bytes = self.options.base_level_size_mb * 1024 * 1024;
-
-        // select base level and compute target level size
-        target_level_size[self.options.max_levels - 1] =
-            real_level_size[self.options.max_levels - 1].max(base_level_size_bytes);
-        for i in (0..(self.options.max_levels - 1)).rev() {
-            let next_level_size = target_level_size[i + 1];
+        // update target_level_size according to real_level_size.
+        if real_level_size[self.options.max_levels - 1] > base_level_size_bytes {
+            target_level_size[self.options.max_levels - 1] =
+                real_level_size[self.options.max_levels - 1];
+        } else {
+            target_level_size[self.options.max_levels - 1] = base_level_size_bytes;
+        }
+        for i in 0..(self.options.max_levels - 1) {
+            let next_level_size = target_level_size[self.options.max_levels - 1 - i];
             let this_level_size = next_level_size / self.options.level_size_multiplier;
             if next_level_size > base_level_size_bytes {
-                target_level_size[i] = this_level_size;
-            }
-            if target_level_size[i] > 0 {
-                base_level = i + 1;
+                target_level_size[self.options.max_levels - 2 - i] = this_level_size;
             }
         }
-
-        // Flush L0 SST is the top priority
+        // then update the base_level.
+        for i in 0..(self.options.max_levels - 1) {
+            if target_level_size[self.options.max_levels - 2 - i] > 0 {
+                base_level = self.options.max_levels - i - 1;
+            }
+        }
         if snapshot.l0_sstables.len() >= self.options.level0_file_num_compaction_trigger {
-            println!("flush L0 SST to base level {}", base_level);
+            // case 1: compact l0 with base_level when there are too many ssts in l0.
             return Some(LeveledCompactionTask {
                 upper_level: None,
                 upper_level_sst_ids: snapshot.l0_sstables.clone(),
@@ -122,37 +127,25 @@ impl LeveledCompactionController {
                 is_lower_level_bottom_level: base_level == self.options.max_levels,
             });
         }
-
+        // case 2: trigger a compaction according to priority_ratios of levels.
         let mut priorities = Vec::with_capacity(self.options.max_levels);
         for level in 0..self.options.max_levels {
             let prio = real_level_size[level] as f64 / target_level_size[level] as f64;
-            if prio > 1.0 {
-                priorities.push((prio, level + 1));
+            priorities.push(prio);
+        }
+        let mut updated = false;
+        let mut max_ratio = 0.0;
+        let mut level = 0;
+        for (i, &ratio) in priorities.iter().enumerate() {
+            if ratio > max_ratio {
+                max_ratio = ratio;
+                level = i + 1; // levels are 1-indexed
+                updated = true;
             }
         }
-        priorities.sort_by(|a, b| a.partial_cmp(b).unwrap().reverse());
-
-        let priority = priorities.first();
-        if let Some((_, level)) = priority {
-            println!(
-                "target level sizes: {:?}, real level sizes: {:?}, base_level: {}",
-                target_level_size
-                    .iter()
-                    .map(|x| format!("{:.3}MB", *x as f64 / 1024.0 / 1024.0))
-                    .collect::<Vec<_>>(),
-                real_level_size
-                    .iter()
-                    .map(|x| format!("{:.3}MB", *x as f64 / 1024.0 / 1024.0))
-                    .collect::<Vec<_>>(),
-                base_level,
-            );
-
-            let level = *level;
-            let selected_sst = snapshot.levels[level - 1].1.iter().min().copied().unwrap(); // select the oldest sst to compact
-            println!(
-                "compaction triggered by priority: {level} out of {:?}, select {selected_sst} for compaction",
-                priorities
-            );
+        if updated && max_ratio > 1.0 {
+            // let level = *level;
+            let selected_sst = snapshot.levels[level - 1].1.iter().min().copied().unwrap();
             return Some(LeveledCompactionTask {
                 upper_level: Some(level),
                 upper_level_sst_ids: vec![selected_sst],
