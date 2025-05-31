@@ -38,6 +38,10 @@ pub struct SsTableBuilder {
 }
 
 impl SsTableBuilder {
+    pub fn empty(&self) -> bool {
+        self.data.is_empty() && self.builder.is_empty()
+    }
+
     /// Create a builder based on target block size.
     pub fn new(block_size: usize) -> Self {
         Self {

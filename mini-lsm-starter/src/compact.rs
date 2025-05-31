@@ -251,17 +251,20 @@ impl LsmStorageInner {
             two_level_merge_iter.next()?;
         }
         // add the last sstable to res_vec.
-        let new_sst_id = self.next_sst_id();
-        let new_sst = Arc::new(
-            sst_builder
-                .build(
-                    new_sst_id,
-                    Some(self.block_cache.clone()),
-                    self.path_of_sst(new_sst_id),
-                )
-                .unwrap(),
-        );
-        res_vec.push(new_sst);
+        // NOTE: must skip empty sst builder here!!!
+        if !sst_builder.empty() {
+            let new_sst_id = self.next_sst_id();
+            let new_sst = Arc::new(
+                sst_builder
+                    .build(
+                        new_sst_id,
+                        Some(self.block_cache.clone()),
+                        self.path_of_sst(new_sst_id),
+                    )
+                    .unwrap(),
+            );
+            res_vec.push(new_sst);
+        }
         Ok(res_vec)
     }
 
@@ -326,6 +329,15 @@ impl LsmStorageInner {
         Ok(res_vec)
     }
 
+    fn leveled_task_compact(
+        &self,
+        upper_level_ids: Vec<usize>,
+        lower_level_ids: Vec<usize>,
+        is_bottom_level: bool,
+    ) -> Result<Vec<Arc<SsTable>>> {
+        self.simple_task_compact(upper_level_ids, lower_level_ids, is_bottom_level)
+    }
+
     fn compact(&self, _task: &CompactionTask) -> Result<Vec<Arc<SsTable>>> {
         let snapshot = {
             let guard = self.state.read();
@@ -353,10 +365,16 @@ impl LsmStorageInner {
                     tiered_task.tiers.clone(),
                     tiered_task.bottom_tier_included,
                 )?;
-                // res_vec = result.clone();
                 Ok(result.clone())
             }
-            _ => unreachable!(),
+            CompactionTask::Leveled(leveled_task) => {
+                let result = self.leveled_task_compact(
+                    leveled_task.upper_level_sst_ids.clone(),
+                    leveled_task.lower_level_sst_ids.clone(),
+                    leveled_task.is_lower_level_bottom_level,
+                )?;
+                Ok(result.clone())
+            }
         }
     }
 
