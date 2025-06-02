@@ -35,6 +35,7 @@ use crate::iterators::concat_iterator::SstConcatIterator;
 use crate::iterators::merge_iterator::MergeIterator;
 use crate::iterators::two_merge_iterator::TwoMergeIterator;
 use crate::lsm_storage::{LsmStorageInner, LsmStorageState};
+use crate::manifest::ManifestRecord;
 use crate::table::{SsTable, SsTableBuilder, SsTableIterator};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -394,20 +395,37 @@ impl LsmStorageInner {
         };
         // then call compact func to perform the real compaction.
         let compacted_sstables = self.compact(&full_compaction_task)?;
-        // then update storage state.
-        let mut write_state = self.state.write();
-        let mut tmp_write_state = write_state.as_ref().clone();
-        // update indexes.
-        tmp_write_state.l0_sstables.clear();
-        let new_l1_sst_ids = compacted_sstables.iter().map(|s| s.sst_id()).collect();
-        tmp_write_state.levels[0].1 = new_l1_sst_ids;
-        // update sstables map.
-        l0_sstables_clone.iter().for_each(|id| {
-            tmp_write_state.sstables.remove(id);
-        });
-        l1_sstables_clone.iter().for_each(|id| {
-            tmp_write_state.sstables.remove(id);
-        });
+        {
+            let state_lock = self.state_lock.lock();
+            let new_l1_sst_ids: Vec<usize> =
+                compacted_sstables.iter().map(|s| s.sst_id()).collect();
+            let cloned_new_sst_ids = new_l1_sst_ids.clone();
+            // then update storage state.
+            let mut write_state = self.state.write();
+            let mut tmp_write_state = write_state.as_ref().clone();
+            // update indexes.
+            tmp_write_state.l0_sstables.clear();
+            tmp_write_state.levels[0].1 = new_l1_sst_ids;
+            // update sstables map.
+            l0_sstables_clone.iter().for_each(|id| {
+                tmp_write_state.sstables.remove(id);
+            });
+            l1_sstables_clone.iter().for_each(|id| {
+                tmp_write_state.sstables.remove(id);
+            });
+            compacted_sstables.iter().for_each(|sst| {
+                tmp_write_state.sstables.insert(sst.sst_id(), sst.clone());
+            });
+            // update state.
+            *write_state = Arc::new(tmp_write_state);
+            drop(write_state);
+            // add new manifest record here to record for force-full-compactions.
+            self.sync_dir()?;
+            self.manifest.as_ref().unwrap().add_record(
+                &state_lock,
+                ManifestRecord::Compaction(full_compaction_task, cloned_new_sst_ids.clone()),
+            )?;
+        }
         // remove compacted sstables from disk.
         l0_sstables_clone.iter().for_each(|id| {
             let path = self.path_of_sst(*id);
@@ -421,12 +439,6 @@ impl LsmStorageInner {
                 eprintln!("remove sstable failed: {}", e);
             }
         });
-        compacted_sstables.iter().for_each(|sst| {
-            tmp_write_state.sstables.insert(sst.sst_id(), sst.clone());
-        });
-        // update state.
-        *write_state = Arc::new(tmp_write_state);
-        drop(write_state);
         Ok(())
     }
 
@@ -452,8 +464,10 @@ impl LsmStorageInner {
             let state_lock = self.state_lock.lock();
             let mut snapshot = self.state.read().as_ref().clone();
             let mut ssts_to_remove: Vec<usize> = Vec::new();
+            let mut new_sst_ids: Vec<usize> = Vec::new();
             for sst in compacted_sstables {
                 snapshot.sstables.insert(sst.sst_id(), sst.clone());
+                new_sst_ids.push(sst.sst_id());
             }
             let (mut snapshot, files_to_remove) = self
                 .compaction_controller
@@ -470,6 +484,12 @@ impl LsmStorageInner {
                 ssts_to_remove,
                 output.clone()
             );
+            // add logic to write new manifest record here to record for compaction.
+            self.sync_dir()?; // sync dir files first.
+            self.manifest.as_ref().unwrap().add_record(
+                &state_lock,
+                ManifestRecord::Compaction(compaction_task, new_sst_ids.clone()),
+            )?;
             ssts_to_remove
         };
         for file_to_remove in files_to_remove.iter() {

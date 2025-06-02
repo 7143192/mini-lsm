@@ -15,9 +15,9 @@
 #![allow(unused_variables)] // TODO(you): remove this lint after implementing this mod
 #![allow(dead_code)] // TODO(you): remove this lint after implementing this mod
 
-use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
+use std::{fs::File, io::Write};
 
 use anyhow::Result;
 use parking_lot::{Mutex, MutexGuard};
@@ -38,7 +38,10 @@ pub enum ManifestRecord {
 
 impl Manifest {
     pub fn create(_path: impl AsRef<Path>) -> Result<Self> {
-        unimplemented!()
+        let manifest_file = File::open(_path)?;
+        Ok(Self {
+            file: Arc::new(Mutex::new(manifest_file)),
+        })
     }
 
     pub fn recover(_path: impl AsRef<Path>) -> Result<(Self, Vec<ManifestRecord>)> {
@@ -54,6 +57,14 @@ impl Manifest {
     }
 
     pub fn add_record_when_init(&self, _record: ManifestRecord) -> Result<()> {
-        unimplemented!()
+        // acquire file write lock first.
+        let mut file = self.file.lock();
+        // encode.
+        let json_vec = serde_json::to_vec(&_record).unwrap();
+        // write to manifest file.
+        file.write_all(&json_vec)?;
+        // fsync to disk.
+        file.sync_all()?;
+        Ok(())
     }
 }
