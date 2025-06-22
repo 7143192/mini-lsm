@@ -237,7 +237,7 @@ impl Drop for MiniLsm {
 
 impl MiniLsm {
     pub fn close(&self) -> Result<()> {
-        self.inner.sync_dir()?;
+        // send messages to flush_thread and compaction_thread to notify them to stop working.
         self.compaction_notifier.send(()).ok();
         self.flush_notifier.send(()).ok();
         // week 1 day 6: only wait for the join of flush_thread.
