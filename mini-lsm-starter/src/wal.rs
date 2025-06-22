@@ -15,8 +15,8 @@
 #![allow(unused_variables)] // TODO(you): remove this lint after implementing this mod
 #![allow(dead_code)] // TODO(you): remove this lint after implementing this mod
 
-use std::fs::File;
-use std::io::BufWriter;
+use std::fs::{File, OpenOptions};
+use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::Path;
 use std::sync::Arc;
 
@@ -31,15 +31,67 @@ pub struct Wal {
 
 impl Wal {
     pub fn create(_path: impl AsRef<Path>) -> Result<Self> {
-        unimplemented!()
+        Ok(Self {
+            file: Arc::new(Mutex::new(BufWriter::new(
+                OpenOptions::new()
+                    .read(true)
+                    .create_new(true)
+                    .write(true)
+                    .open(_path)?,
+            ))),
+        })
     }
 
     pub fn recover(_path: impl AsRef<Path>, _skiplist: &SkipMap<Bytes, Bytes>) -> Result<Self> {
-        unimplemented!()
+        let file = OpenOptions::new().read(true).append(true).open(_path)?;
+        let cloned_file = file.try_clone()?;
+        let mut reader = BufReader::new(file);
+        let mut data_buf = Vec::new();
+        // read data into the target buffer.
+        reader.read_to_end(&mut data_buf)?;
+        // traverse the data buffer and reconstruct all manifest records.
+        let mut buf_ptr = &data_buf[..];
+        while !buf_ptr.is_empty() {
+            // read key len.
+            let key_len_bytes = &buf_ptr[..8];
+            let key_len = u64::from_be_bytes(key_len_bytes.try_into().unwrap());
+            buf_ptr = &buf_ptr[8..];
+            // read key data.
+            let key_data = &buf_ptr[..key_len as usize];
+            buf_ptr = &buf_ptr[key_len as usize..];
+            // read value len.
+            let value_len_bytes = &buf_ptr[..8];
+            let value_len = u64::from_be_bytes(value_len_bytes.try_into().unwrap());
+            buf_ptr = &buf_ptr[8..];
+            // read value data.
+            let value_data = &buf_ptr[..value_len as usize];
+            buf_ptr = &buf_ptr[value_len as usize..];
+            _skiplist.insert(
+                Bytes::copy_from_slice(key_data),
+                Bytes::copy_from_slice(value_data),
+            );
+        }
+        Ok(Self {
+            file: Arc::new(Mutex::new(BufWriter::new(cloned_file))),
+        })
     }
 
     pub fn put(&self, _key: &[u8], _value: &[u8]) -> Result<()> {
-        unimplemented!()
+        // write key len.
+        let key_len = _key.len();
+        let key_len_bytes = key_len.to_be_bytes();
+        self.file.lock().write_all(&key_len_bytes)?;
+        // write key data.
+        self.file.lock().write_all(_key)?;
+        // write value len.
+        let value_len = _value.len();
+        let value_len_bytes = value_len.to_be_bytes();
+        self.file.lock().write_all(&value_len_bytes)?;
+        // write value data.
+        self.file.lock().write_all(_value)?;
+        // sync.
+        self.file.lock().flush()?;
+        Ok(())
     }
 
     /// Implement this in week 3, day 5.
@@ -48,6 +100,9 @@ impl Wal {
     }
 
     pub fn sync(&self) -> Result<()> {
-        unimplemented!()
+        let mut file = self.file.lock();
+        file.flush()?;
+        file.get_mut().sync_all()?;
+        Ok(())
     }
 }

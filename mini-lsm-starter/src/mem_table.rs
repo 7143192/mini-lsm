@@ -106,6 +106,10 @@ impl MemTable {
     pub fn put(&self, _key: &[u8], _value: &[u8]) -> Result<()> {
         let key_bytes = Bytes::copy_from_slice(_key);
         let val_bytes = Bytes::copy_from_slice(_value);
+        // week 2, day 6: write put data to WAL.
+        if let Some(ref wal) = self.wal {
+            wal.put(key_bytes.as_ref(), val_bytes.as_ref())?;
+        }
         self.map.insert(key_bytes.clone(), val_bytes.clone());
         self.approximate_size.fetch_add(
             key_bytes.len() + val_bytes.len(),
