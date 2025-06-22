@@ -15,6 +15,8 @@
 #![allow(unused_variables)] // TODO(you): remove this lint after implementing this mod
 #![allow(dead_code)] // TODO(you): remove this lint after implementing this mod
 
+use std::fs::OpenOptions;
+use std::io::{BufReader, Read};
 use std::path::Path;
 use std::sync::Arc;
 use std::{fs::File, io::Write};
@@ -38,14 +40,44 @@ pub enum ManifestRecord {
 
 impl Manifest {
     pub fn create(_path: impl AsRef<Path>) -> Result<Self> {
-        let manifest_file = File::open(_path)?;
         Ok(Self {
-            file: Arc::new(Mutex::new(manifest_file)),
+            file: Arc::new(Mutex::new(
+                OpenOptions::new()
+                    .read(true)
+                    .create_new(true)
+                    .write(true)
+                    .open(_path)?,
+            )),
         })
     }
 
     pub fn recover(_path: impl AsRef<Path>) -> Result<(Self, Vec<ManifestRecord>)> {
-        unimplemented!()
+        let mut res_vec: Vec<ManifestRecord> = Vec::new();
+        let file = OpenOptions::new().read(true).append(true).open(_path)?;
+        let cloned_file = file.try_clone()?;
+        let mut reader = BufReader::new(file);
+        let mut data_buf = Vec::new();
+        // read data into the target buffer.
+        reader.read_to_end(&mut data_buf)?;
+        // traverse the data buffer and reconstruct all manifest records.
+        let mut buf_ptr = &data_buf[..];
+        while !buf_ptr.is_empty() {
+            // read length
+            let len_bytes = &buf_ptr[..8];
+            let len = u64::from_be_bytes(len_bytes.try_into().unwrap());
+            buf_ptr = &buf_ptr[8..];
+            // read data
+            let data_slice = &buf_ptr[..len as usize];
+            let record: ManifestRecord = serde_json::from_slice::<ManifestRecord>(data_slice)?;
+            res_vec.push(record);
+            buf_ptr = &buf_ptr[len as usize..];
+        }
+        Ok((
+            Self {
+                file: Arc::new(Mutex::new(cloned_file)),
+            },
+            res_vec,
+        ))
     }
 
     pub fn add_record(
@@ -61,7 +93,9 @@ impl Manifest {
         let mut file = self.file.lock();
         // encode.
         let json_vec = serde_json::to_vec(&_record).unwrap();
-        // write to manifest file.
+        // write serialized data length to manifest file.
+        file.write_all(&(json_vec.len() as u64).to_be_bytes())?;
+        // write real record data to manifest file.
         file.write_all(&json_vec)?;
         // fsync to disk.
         file.sync_all()?;

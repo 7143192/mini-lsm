@@ -217,9 +217,11 @@ impl LeveledCompactionController {
             new_lower_level_sst_ids.push(*sst_id);
         }
         new_lower_level_sst_ids.extend(_output);
-        // then sort all new lower level states according to their first keys.
-        new_lower_level_sst_ids
-            .sort_by_key(|sst_id| snapshot.sstables.get(sst_id).unwrap().first_key().clone());
+        if !_in_recovery {
+            // then sort all new lower level states according to their first keys.
+            new_lower_level_sst_ids
+                .sort_by_key(|sst_id| snapshot.sstables.get(sst_id).unwrap().first_key().clone());
+        }
         snapshot.levels[_task.lower_level - 1].1 = new_lower_level_sst_ids;
         (snapshot, files_to_remove)
     }

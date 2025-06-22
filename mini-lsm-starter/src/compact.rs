@@ -454,9 +454,9 @@ impl LsmStorageInner {
         if compaction_task.is_none() {
             return Ok(());
         }
-        // then perform the compaction according to the compaction task.
-        println!("before compaction:");
-        self.dump_structure();
+        // // then perform the compaction according to the compaction task.
+        // println!("before compaction:");
+        // self.dump_structure();
         let compaction_task = compaction_task.unwrap();
         let compacted_sstables = self.compact(&compaction_task)?;
         let output: Vec<usize> = compacted_sstables.iter().map(|sst| sst.sst_id()).collect();
@@ -498,8 +498,8 @@ impl LsmStorageInner {
                 eprintln!("remove sstable failed: {}", e);
             }
         }
-        println!("after compaction:");
-        self.dump_structure();
+        // println!("after compaction:");
+        // self.dump_structure();
         Ok(())
     }
 

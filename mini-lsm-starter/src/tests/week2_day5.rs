@@ -122,6 +122,7 @@ fn test_integration(compaction_options: CompactionOptions) {
     )
     .unwrap();
     for i in 0..=20 {
+        println!("loop {}", i);
         storage.put(b"0", format!("v{}", i).as_bytes()).unwrap();
         if i % 2 == 0 {
             storage.put(b"1", format!("v{}", i).as_bytes()).unwrap();
@@ -138,7 +139,9 @@ fn test_integration(compaction_options: CompactionOptions) {
             .force_freeze_memtable(&storage.inner.state_lock.lock())
             .unwrap();
     }
+    println!("finish loops");
     storage.close().unwrap();
+    println!("close() finished");
     // ensure all SSTs are flushed
     assert!(storage.inner.state.read().memtable.is_empty());
     assert!(storage.inner.state.read().imm_memtables.is_empty());
