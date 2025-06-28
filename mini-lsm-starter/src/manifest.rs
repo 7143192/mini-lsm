@@ -61,16 +61,32 @@ impl Manifest {
         reader.read_to_end(&mut data_buf)?;
         // traverse the data buffer and reconstruct all manifest records.
         let mut buf_ptr = &data_buf[..];
+        // week 2 day 7: add checksum logic for manifest.
+        let mut checksum_vec: Vec<u8> = Vec::new();
         while !buf_ptr.is_empty() {
+            checksum_vec.clear();
             // read length
             let len_bytes = &buf_ptr[..8];
+            checksum_vec.extend(len_bytes);
             let len = u64::from_be_bytes(len_bytes.try_into().unwrap());
             buf_ptr = &buf_ptr[8..];
             // read data
             let data_slice = &buf_ptr[..len as usize];
+            checksum_vec.extend(data_slice);
             let record: ManifestRecord = serde_json::from_slice::<ManifestRecord>(data_slice)?;
-            res_vec.push(record);
             buf_ptr = &buf_ptr[len as usize..];
+            let checksum_bytes = &buf_ptr[..4];
+            let checksum = u32::from_be_bytes(checksum_bytes.try_into().unwrap());
+            buf_ptr = &buf_ptr[4..];
+            let recovered_checksum = crc32fast::hash(checksum_vec.as_ref());
+            if checksum != recovered_checksum {
+                return Err(anyhow::anyhow!(
+                    "Manifest checksum mismatch: expected {}, got {}",
+                    recovered_checksum,
+                    checksum
+                ));
+            }
+            res_vec.push(record);
         }
         Ok((
             Self {
@@ -92,11 +108,17 @@ impl Manifest {
         // acquire file write lock first.
         let mut file = self.file.lock();
         // encode.
+        let mut checksum_vec: Vec<u8> = Vec::new();
         let json_vec = serde_json::to_vec(&_record).unwrap();
         // write serialized data length to manifest file.
         file.write_all(&(json_vec.len() as u64).to_be_bytes())?;
+        checksum_vec.extend_from_slice(&(json_vec.len() as u64).to_be_bytes());
         // write real record data to manifest file.
         file.write_all(&json_vec)?;
+        checksum_vec.extend_from_slice(&json_vec);
+        // week 2 day 7: add checksum logic for manifest.
+        let checksum = crc32fast::hash(checksum_vec.as_ref());
+        file.write_all(&checksum.to_be_bytes())?;
         // fsync to disk.
         file.sync_all()?;
         Ok(())

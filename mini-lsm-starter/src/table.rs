@@ -54,6 +54,7 @@ impl BlockMeta {
         buf: &mut Vec<u8>,
     ) {
         let meta_num = block_meta.len();
+        let old_buf_len = buf.len();
         buf.put_u16(meta_num as u16);
         for meta in block_meta {
             buf.put_u32(meta.offset as u32);
@@ -62,11 +63,16 @@ impl BlockMeta {
             buf.put_u16(meta.last_key.len() as u16);
             buf.put_slice(meta.last_key.raw_ref());
         }
+        // week 2 day 7: add checksum logic for BlockMeta.
+        let block_meta_checksum = crc32fast::hash(&buf[old_buf_len..]);
+        buf.put_u32(block_meta_checksum);
     }
 
     /// Decode block meta from a buffer.
     pub fn decode_block_meta(mut buf: &[u8]) -> Vec<BlockMeta> {
         let mut block_meta = Vec::new();
+        let u32_size = std::mem::size_of::<u32>();
+        let buf_to_checksum = &buf[..buf.remaining() - u32_size];
         let num = buf.get_u16() as usize;
         for _ in 0..num {
             let offset = buf.get_u32() as usize;
@@ -79,6 +85,15 @@ impl BlockMeta {
                 first_key,
                 last_key,
             });
+        }
+        let checksum = buf.get_u32();
+        // week 2 day 7: verify the checksum.
+        let expected_checksum = crc32fast::hash(buf_to_checksum);
+        if checksum != expected_checksum {
+            panic!(
+                "BlockMeta checksum mismatch: expected {}, got {}",
+                expected_checksum, checksum
+            );
         }
         block_meta
     }
@@ -206,7 +221,18 @@ impl SsTable {
         }
         let target_len = (end_offset - start_offset) as u64;
         let block_data_bytes = self.file.read(start_offset as u64, target_len)?;
-        let block_data = &block_data_bytes[..];
+        let block_data = &block_data_bytes[..(target_len - u32_size as u64) as usize];
+        let checksum_bytes = &block_data_bytes[(target_len - u32_size as u64) as usize..];
+        let checksum = (&checksum_bytes[..]).get_u32();
+        // week 2 day 7: verify the checksum.
+        let expected_checksum = crc32fast::hash(block_data);
+        if checksum != expected_checksum {
+            return Err(anyhow::anyhow!(
+                "Checksum mismatch: expected {}, got {}",
+                expected_checksum,
+                checksum
+            ));
+        }
         Ok(Arc::new(Block::decode(block_data)))
     }
 

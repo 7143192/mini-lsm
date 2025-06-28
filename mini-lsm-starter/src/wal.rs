@@ -51,21 +51,40 @@ impl Wal {
         reader.read_to_end(&mut data_buf)?;
         // traverse the data buffer and reconstruct all manifest records.
         let mut buf_ptr = &data_buf[..];
+        // week 2 day 7: add checksum logic for WAL.
+        let mut kv_vec: Vec<u8> = Vec::new();
+        let u32_size = std::mem::size_of::<u32>();
         while !buf_ptr.is_empty() {
+            kv_vec.clear();
             // read key len.
             let key_len_bytes = &buf_ptr[..8];
+            kv_vec.extend(key_len_bytes);
             let key_len = u64::from_be_bytes(key_len_bytes.try_into().unwrap());
             buf_ptr = &buf_ptr[8..];
             // read key data.
             let key_data = &buf_ptr[..key_len as usize];
+            kv_vec.extend(key_data);
             buf_ptr = &buf_ptr[key_len as usize..];
             // read value len.
             let value_len_bytes = &buf_ptr[..8];
+            kv_vec.extend(value_len_bytes);
             let value_len = u64::from_be_bytes(value_len_bytes.try_into().unwrap());
             buf_ptr = &buf_ptr[8..];
             // read value data.
             let value_data = &buf_ptr[..value_len as usize];
+            kv_vec.extend(value_data);
             buf_ptr = &buf_ptr[value_len as usize..];
+            let checksum_bytes = &buf_ptr[..u32_size];
+            let checksum = u32::from_be_bytes(checksum_bytes.try_into().unwrap());
+            buf_ptr = &buf_ptr[u32_size..];
+            let recovered_checksum = crc32fast::hash(kv_vec.as_ref());
+            if checksum != recovered_checksum {
+                return Err(anyhow::anyhow!(
+                    "WAL checksum mismatch: expected {}, got {}",
+                    recovered_checksum,
+                    checksum
+                ));
+            }
             _skiplist.insert(
                 Bytes::copy_from_slice(key_data),
                 Bytes::copy_from_slice(value_data),
@@ -77,20 +96,29 @@ impl Wal {
     }
 
     pub fn put(&self, _key: &[u8], _value: &[u8]) -> Result<()> {
+        let mut file = self.file.lock();
+        let mut kv_vec: Vec<u8> = Vec::new();
         // write key len.
         let key_len = _key.len();
         let key_len_bytes = key_len.to_be_bytes();
-        self.file.lock().write_all(&key_len_bytes)?;
+        file.write_all(&key_len_bytes)?;
         // write key data.
-        self.file.lock().write_all(_key)?;
+        file.write_all(_key)?;
         // write value len.
         let value_len = _value.len();
         let value_len_bytes = value_len.to_be_bytes();
-        self.file.lock().write_all(&value_len_bytes)?;
+        file.write_all(&value_len_bytes)?;
         // write value data.
-        self.file.lock().write_all(_value)?;
+        file.write_all(_value)?;
+        // week 2 day 7: add checksum logic for WAL.
+        kv_vec.extend(key_len_bytes);
+        kv_vec.extend(_key);
+        kv_vec.extend(value_len_bytes);
+        kv_vec.extend(_value);
+        let checksum = crc32fast::hash(kv_vec.as_ref());
+        file.write_all(&checksum.to_be_bytes())?;
         // sync.
-        self.file.lock().flush()?;
+        file.flush()?;
         Ok(())
     }
 
