@@ -590,13 +590,31 @@ impl LsmStorageInner {
 
     /// Write a batch of data into the storage. Implement in week 2 day 7.
     pub fn write_batch<T: AsRef<[u8]>>(&self, _batch: &[WriteBatchRecord<T>]) -> Result<()> {
-        unimplemented!()
+        let mut data_pairs: Vec<(KeySlice, &[u8])> = Vec::new();
+        for record in _batch {
+            match record {
+                WriteBatchRecord::Put(key, val) => {
+                    let key_slice = KeySlice::from_slice(key.as_ref());
+                    data_pairs.push((key_slice, val.as_ref()));
+                }
+                WriteBatchRecord::Del(key) => {
+                    let key_slice = KeySlice::from_slice(key.as_ref());
+                    data_pairs.push((key_slice, b""));
+                }
+            }
+        }
+        self.state
+            .read()
+            .memtable
+            .put_batch(data_pairs.as_slice())?;
+        Ok(())
     }
 
     /// Put a key-value pair into the storage by writing into the current memtable.
     pub fn put(&self, _key: &[u8], _value: &[u8]) -> Result<()> {
         let read_state = self.state.read();
-        let res = read_state.memtable.put(_key, _value);
+        // let res = read_state.memtable.put(_key, _value);
+        let res = self.write_batch(&[WriteBatchRecord::Put(_key, _value)]);
         let cur_size = read_state.memtable.approximate_size();
         if cur_size >= self.options.target_sst_size {
             drop(read_state);
@@ -609,7 +627,8 @@ impl LsmStorageInner {
     /// Remove a key from the storage by writing an empty value.
     pub fn delete(&self, _key: &[u8]) -> Result<()> {
         let read_state = self.state.read();
-        let res = read_state.memtable.put(_key, b"");
+        // let res = read_state.memtable.put(_key, b"");
+        let res = self.write_batch(&[WriteBatchRecord::Put(_key, b"")]);
         let cur_size = read_state.memtable.approximate_size();
         if cur_size >= self.options.target_sst_size {
             drop(read_state);

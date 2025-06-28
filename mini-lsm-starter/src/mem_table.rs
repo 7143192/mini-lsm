@@ -131,7 +131,11 @@ impl MemTable {
 
     /// Implement this in week 3, day 5.
     pub fn put_batch(&self, _data: &[(KeySlice, &[u8])]) -> Result<()> {
-        unimplemented!()
+        // unimplemented!()
+        for (key, value) in _data {
+            self.put(key.raw_ref(), value)?;
+        }
+        Ok(())
     }
 
     pub fn sync_wal(&self) -> Result<()> {
