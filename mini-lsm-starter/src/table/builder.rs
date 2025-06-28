@@ -38,6 +38,10 @@ pub struct SsTableBuilder {
 }
 
 impl SsTableBuilder {
+    pub fn empty(&self) -> bool {
+        self.data.is_empty() && self.builder.is_empty()
+    }
+
     /// Create a builder based on target block size.
     pub fn new(block_size: usize) -> Self {
         Self {
@@ -78,7 +82,10 @@ impl SsTableBuilder {
             last_key: KeyBytes::from_bytes(Bytes::from(self.last_key.clone())),
         });
         let encoded_old_block = old_builder.build().encode();
-        self.data.extend(encoded_old_block);
+        self.data.extend(encoded_old_block.clone());
+        // week 2 day 7: add a checksum for a completed data block.
+        let checksum = crc32fast::hash(&encoded_old_block.clone());
+        self.data.put_u32(checksum);
         // insert this kv pair into the new block.
         // week 1 day 7
         // let new_block_add_result = self.builder.add(key, value);
@@ -114,7 +121,10 @@ impl SsTableBuilder {
             last_key: KeyBytes::from_bytes(Bytes::from(self.last_key.clone())),
         });
         let encoded_old_block = old_builder.build().encode();
-        self.data.extend(encoded_old_block);
+        self.data.extend(encoded_old_block.clone());
+        // week 2 day 7: add a checksum for a completed data block.
+        let checksum = crc32fast::hash(&encoded_old_block.clone());
+        self.data.put_u32(checksum);
         let meta_offset = self.data.len();
         BlockMeta::encode_block_meta(&self.meta, &mut self.data);
         self.data.put_u32(meta_offset as u32);

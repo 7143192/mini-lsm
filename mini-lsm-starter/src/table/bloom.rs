@@ -61,8 +61,21 @@ impl<T: AsMut<[u8]>> BitSliceMut for T {
 impl Bloom {
     /// Decode a bloom filter
     pub fn decode(buf: &[u8]) -> Result<Self> {
-        let filter = &buf[..buf.len() - 1];
-        let k = buf[buf.len() - 1];
+        let u32_size = std::mem::size_of::<u32>();
+        let u8_size = std::mem::size_of::<u8>();
+        let filter = &buf[..buf.len() - u8_size - u32_size];
+        let k = buf[buf.len() - u32_size - u8_size];
+        // week 2 day 7: add checksum logic.
+        let checksum_bytes = &buf[buf.len() - u32_size..];
+        let checksum = u32::from_be_bytes(checksum_bytes.try_into().unwrap());
+        let expected_checksum = crc32fast::hash(buf[..buf.len() - u32_size].as_ref());
+        if checksum != expected_checksum {
+            return Err(anyhow::anyhow!(
+                "Bloom Filter Checksum mismatch: expected {}, got {}",
+                expected_checksum,
+                checksum
+            ));
+        }
         Ok(Self {
             filter: filter.to_vec().into(),
             k,
@@ -71,8 +84,13 @@ impl Bloom {
 
     /// Encode a bloom filter
     pub fn encode(&self, buf: &mut Vec<u8>) {
-        buf.extend(&self.filter);
-        buf.put_u8(self.k);
+        let mut tmp_buf: Vec<u8> = Vec::new();
+        tmp_buf.extend(&self.filter);
+        tmp_buf.put_u8(self.k);
+        buf.extend(tmp_buf.as_slice());
+        // week 2 day 7: add checksum logic.
+        let bloom_checksum = crc32fast::hash(&tmp_buf);
+        buf.put_u32(bloom_checksum);
     }
 
     /// Get bloom filter bits per key from entries count and FPR

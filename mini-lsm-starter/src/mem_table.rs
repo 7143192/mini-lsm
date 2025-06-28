@@ -35,7 +35,7 @@ use crate::wal::{self, Wal};
 /// An initial implementation of memtable is part of week 1, day 1. It will be incrementally implemented in other
 /// chapters of week 1 and week 2.
 pub struct MemTable {
-    map: Arc<SkipMap<Bytes, Bytes>>,
+    pub(crate) map: Arc<SkipMap<Bytes, Bytes>>,
     wal: Option<Wal>,
     id: usize,
     approximate_size: Arc<AtomicUsize>,
@@ -73,7 +73,18 @@ impl MemTable {
 
     /// Create a memtable from WAL
     pub fn recover_from_wal(_id: usize, _path: impl AsRef<Path>) -> Result<Self> {
-        unimplemented!()
+        let map = SkipMap::new();
+        let wal = Wal::recover(_path, &map)?;
+        let mut size = 0_usize;
+        for entry in map.iter() {
+            size += entry.key().len() + entry.value().len();
+        }
+        Ok(Self {
+            id: _id,
+            map: Arc::new(map),
+            wal: Some(wal),
+            approximate_size: Arc::new(AtomicUsize::new(size)),
+        })
     }
 
     pub fn for_testing_put_slice(&self, key: &[u8], value: &[u8]) -> Result<()> {
@@ -106,6 +117,10 @@ impl MemTable {
     pub fn put(&self, _key: &[u8], _value: &[u8]) -> Result<()> {
         let key_bytes = Bytes::copy_from_slice(_key);
         let val_bytes = Bytes::copy_from_slice(_value);
+        // week 2, day 6: write put data to WAL.
+        if let Some(ref wal) = self.wal {
+            wal.put(key_bytes.as_ref(), val_bytes.as_ref())?;
+        }
         self.map.insert(key_bytes.clone(), val_bytes.clone());
         self.approximate_size.fetch_add(
             key_bytes.len() + val_bytes.len(),
@@ -116,7 +131,11 @@ impl MemTable {
 
     /// Implement this in week 3, day 5.
     pub fn put_batch(&self, _data: &[(KeySlice, &[u8])]) -> Result<()> {
-        unimplemented!()
+        // unimplemented!()
+        for (key, value) in _data {
+            self.put(key.raw_ref(), value)?;
+        }
+        Ok(())
     }
 
     pub fn sync_wal(&self) -> Result<()> {
