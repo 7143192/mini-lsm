@@ -274,8 +274,11 @@ impl MiniLsm {
             } {
                 self.inner.force_flush_next_imm_memtable()?;
             }
-            self.inner.sync_dir()?;
+        } else {
+            // if WAL is enabled, only need to sync WALs.
+            self.inner.sync()?;
         }
+        self.inner.sync_dir()?;
         Ok(())
     }
 
@@ -454,13 +457,35 @@ impl LsmStorageInner {
             next_sst_id += 1;
             // then create new memtable.
             // no need to create imm_memtables here because we will flush all memtables to disk before the storage engine is closed.
-            state.memtable = Arc::new(MemTable::create(next_sst_id));
+            if options.enable_wal {
+                // recover previous memtables from WALs.
+                let mut memtable_vec: Vec<usize> = memtable_set.iter().copied().collect();
+                memtable_vec.sort();
+                for id in memtable_vec.iter() {
+                    let recovered_memtable =
+                        MemTable::recover_from_wal(*id, Self::path_of_wal_static(path, *id))?;
+                    state.imm_memtables.insert(0, Arc::new(recovered_memtable));
+                }
+                // if WAL is enabled, new memtable should be created with a corresponding WAL.
+                state.memtable = Arc::new(MemTable::create_with_wal(
+                    next_sst_id,
+                    Self::path_of_wal_static(path, next_sst_id),
+                )?);
+            } else {
+                state.memtable = Arc::new(MemTable::create(next_sst_id));
+            }
             recovered_manifest
                 .add_record_when_init(ManifestRecord::NewMemtable(state.memtable.id()))?;
             manifest = recovered_manifest;
         } else {
             // manifest file does not exist, create a new manifest file.
             let new_manifest = Manifest::create(&manifest_path)?;
+            if options.enable_wal {
+                state.memtable = Arc::new(MemTable::create_with_wal(
+                    state.memtable.id(),
+                    Self::path_of_wal_static(path, state.memtable.id()),
+                )?);
+            }
             new_manifest.add_record_when_init(ManifestRecord::NewMemtable(state.memtable.id()))?;
             manifest = new_manifest;
         }
@@ -482,7 +507,8 @@ impl LsmStorageInner {
     }
 
     pub fn sync(&self) -> Result<()> {
-        unimplemented!()
+        self.state.read().memtable.sync_wal()?;
+        Ok(())
     }
 
     pub fn add_compaction_filter(&self, compaction_filter: CompactionFilter) {
@@ -621,7 +647,14 @@ impl LsmStorageInner {
         let mut write_state = self.state.write();
         // create a new memtable.
         let new_sst_id = self.next_sst_id();
-        let new_memtable = Arc::new(MemTable::create(new_sst_id));
+        let new_memtable: Arc<MemTable> = if self.options.enable_wal {
+            Arc::new(MemTable::create_with_wal(
+                new_sst_id,
+                Self::path_of_wal_static(&self.path, new_sst_id),
+            )?)
+        } else {
+            Arc::new(MemTable::create(new_sst_id))
+        };
         // change current memtable to a immutable table and push to the front of the vector.
         let mut tmp_write_state = write_state.as_ref().clone();
         let old_memtable = tmp_write_state.memtable.clone();
